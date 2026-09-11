@@ -3,7 +3,9 @@
 import { useMemo, useState, useTransition } from 'react'
 
 import type { ProductView } from '../../../../commerce/catalog/get-product.ts'
-import { validarSelecao, type ResultadoValidacao } from './actions.ts'
+import { useRouter } from 'next/navigation'
+
+import { adicionarAoCarrinho, type ResultadoAdicao } from './actions.ts'
 
 function brl(cents: number): string {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -37,8 +39,9 @@ export function SeletorDeCompra({
 
   const [personalizacao, setPersonalizacao] = useState<Record<string, string>>({})
   const [acabamentos, setAcabamentos] = useState<string[]>([])
-  const [resultado, setResultado] = useState<ResultadoValidacao | null>(null)
+  const [resultado, setResultado] = useState<ResultadoAdicao | null>(null)
   const [enviando, iniciarEnvio] = useTransition()
+  const router = useRouter()
 
   const linhaAtual = useMemo(
     () => produto.lotTable.find((linha) => linha.qty === quantidade) ?? produto.lotTable[0],
@@ -77,8 +80,9 @@ export function SeletorDeCompra({
   }, [produto, aroma, quantidade, linhaAtual])
 
   function enviar() {
+    setResultado(null)
     iniciarEnvio(async () => {
-      const resposta = await validarSelecao({
+      const resposta = await adicionarAoCarrinho({
         slug: produto.slug,
         variantKey: aroma,
         qty: quantidade,
@@ -86,6 +90,8 @@ export function SeletorDeCompra({
         addonIds: acabamentos,
       })
       setResultado(resposta)
+      // Deu certo: leva para o carrinho, como qualquer loja faz.
+      if (resposta.ok) router.push('/meucarrinho/')
     })
   }
 
@@ -303,7 +309,7 @@ export function SeletorDeCompra({
             }}
           >
             {resultado.ok
-              ? `Tudo certo: ${resultado.resumo}. O carrinho entra na próxima etapa.`
+              ? 'Adicionado ao carrinho. Levando você para lá...'
               : resultado.mensagem}
           </p>
         )}

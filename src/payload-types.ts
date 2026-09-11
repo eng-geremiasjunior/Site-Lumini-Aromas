@@ -63,6 +63,7 @@ export type SupportedTimezones =
 
 export interface Config {
   auth: {
+    customers: CustomerAuthOperations;
     users: UserAuthOperations;
   };
   blocks: {};
@@ -75,6 +76,9 @@ export interface Config {
     addons: Addon;
     tags: Tag;
     media: Media;
+    orders: Order;
+    carts: Cart;
+    customers: Customer;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -91,6 +95,9 @@ export interface Config {
     addons: AddonsSelect<false> | AddonsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    orders: OrdersSelect<false> | OrdersSelect<true>;
+    carts: CartsSelect<false> | CartsSelect<true>;
+    customers: CustomersSelect<false> | CustomersSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -111,10 +118,28 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: Customer | User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
+  };
+}
+export interface CustomerAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
   };
 }
 export interface UserAuthOperations {
@@ -568,6 +593,314 @@ export interface Addon {
   createdAt: string;
 }
 /**
+ * Todos os pedidos, do site e os lançados à mão.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders".
+ */
+export interface Order {
+  id: number;
+  number: string;
+  status:
+    | 'pending'
+    | 'processing'
+    | 'art_approval'
+    | 'production'
+    | 'shipped'
+    | 'completed'
+    | 'cancelled'
+    | 'refunded'
+    | 'failed'
+    | 'disputed';
+  /**
+   * Usado para medir o retorno de cada canal e devolver a conversão à Meta.
+   */
+  channel: 'site' | 'whatsapp' | 'instagram_dm' | 'admin';
+  legacyWooId?: number | null;
+  customerName: string;
+  email?: string | null;
+  phone?: string | null;
+  personType?: ('PF' | 'PJ') | null;
+  document?: string | null;
+  customer?: (number | null) | Customer;
+  /**
+   * Nome, preço e custo ficam congelados no momento da venda, para o histórico não mudar depois.
+   */
+  items?:
+    | {
+        product?: (number | null) | Product;
+        productName: string;
+        variantLabel?: string | null;
+        sku?: string | null;
+        qty: number;
+        unitPrice: number;
+        lotPrice: number;
+        lineTotal: number;
+        /**
+         * O que o cliente escreveu, exatamente como digitou.
+         */
+        personalization?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        addons?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        artFile?: (number | null) | Media;
+        artProof?: (number | null) | Media;
+        /**
+         * Congelado na venda. Alimenta o lucro no DRE.
+         */
+        unitCost?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  shippingAddress?: {
+    postalCode?: string | null;
+    street?: string | null;
+    number?: string | null;
+    complement?: string | null;
+    district?: string | null;
+    city?: string | null;
+    state?: string | null;
+  };
+  shippingService?: string | null;
+  trackingCode?: string | null;
+  /**
+   * Casamento, 15 anos, batizado...
+   */
+  eventType?: string | null;
+  /**
+   * O prazo de produção precisa caber antes desta data.
+   */
+  eventDate?: string | null;
+  /**
+   * Data limite calculada no momento da compra.
+   */
+  productionDeadline?: string | null;
+  customerNote?: string | null;
+  subtotal: number;
+  shippingTotal?: number | null;
+  discountTotal?: number | null;
+  total: number;
+  paymentMethod?: ('pix' | 'credit_card' | 'debit_card' | 'mp_link' | 'external') | null;
+  installments?: number | null;
+  couponCode?: string | null;
+  /**
+   * Preenchido sozinho quando o pagamento é confirmado.
+   */
+  mercadoPago?: {
+    paymentId?: string | null;
+    status?: string | null;
+    /**
+     * Valor real informado pelo Mercado Pago.
+     */
+    feeCents?: number | null;
+    netReceivedCents?: number | null;
+    /**
+     * Usada no fluxo de caixa, que é diferente do DRE.
+     */
+    moneyReleaseDate?: string | null;
+  };
+  datePaid?: string | null;
+  /**
+   * Aquele código curto que vai na mensagem do WhatsApp.
+   */
+  leadRef?: string | null;
+  /**
+   * Campanha, anúncio e cookies capturados na visita.
+   */
+  attribution?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Registro do que já foi para a Meta e para o Google, para não enviar duas vezes.
+   */
+  conversionsSent?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  /**
+   * Tudo que aconteceu com o pedido, na ordem.
+   */
+  events?:
+    | {
+        at?: string | null;
+        type?: string | null;
+        message?: string | null;
+        actor?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  notes?:
+    | {
+        visibleToCustomer?: boolean | null;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Quem compra na loja.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers".
+ */
+export interface Customer {
+  id: number;
+  name?: string | null;
+  phone?: string | null;
+  personType?: ('PF' | 'PJ') | null;
+  /**
+   * Necessário para emitir a nota fiscal.
+   */
+  document?: string | null;
+  addresses?:
+    | {
+        label?: string | null;
+        postalCode: string;
+        street: string;
+        number: string;
+        complement?: string | null;
+        district: string;
+        city: string;
+        state: string;
+        isDefault?: boolean | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Guardadas com data e hora, como prova de consentimento exigida pela LGPD e pela política do WhatsApp.
+   */
+  optIns?: {
+    whatsappStatus?: boolean | null;
+    marketing?: boolean | null;
+    log?:
+      | {
+          [k: string]: unknown;
+        }
+      | unknown[]
+      | string
+      | number
+      | boolean
+      | null;
+  };
+  /**
+   * Marque se o cliente pediu para não ter os dados usados em anúncios.
+   */
+  metaOptOut?: boolean | null;
+  legacyWooId?: number | null;
+  notes?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'customers';
+}
+/**
+ * Carrinhos em aberto e abandonados.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts".
+ */
+export interface Cart {
+  id: number;
+  token: string;
+  status: 'active' | 'abandoned' | 'converted' | 'lost';
+  items?:
+    | {
+        product: number | Product;
+        variantKey?: string | null;
+        qty: number;
+        /**
+         * O que o cliente escreveu em cada campo.
+         */
+        personalization?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        addonIds?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Capturado no primeiro passo do checkout, para recuperar o carrinho.
+   */
+  email?: string | null;
+  phone?: string | null;
+  /**
+   * Preenchido quando o cliente entra na conta.
+   */
+  customer?: (number | null) | Customer;
+  couponCode?: string | null;
+  lastActivityAt?: string | null;
+  convertedOrderNumber?: string | null;
+  /**
+   * De onde o cliente veio: campanha, anúncio ou acesso direto.
+   */
+  attribution?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Quem pode entrar no painel e o que cada pessoa enxerga.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -661,14 +994,31 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
+        relationTo: 'orders';
+        value: number | Order;
+      } | null)
+    | ({
+        relationTo: 'carts';
+        value: number | Cart;
+      } | null)
+    | ({
+        relationTo: 'customers';
+        value: number | Customer;
+      } | null)
+    | ({
         relationTo: 'users';
         value: number | User;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'customers';
+        value: number | Customer;
+      }
+    | {
+        relationTo: 'users';
+        value: number | User;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -678,10 +1028,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: number;
-  user: {
-    relationTo: 'users';
-    value: number | User;
-  };
+  user:
+    | {
+        relationTo: 'customers';
+        value: number | Customer;
+      }
+    | {
+        relationTo: 'users';
+        value: number | User;
+      };
   key?: string | null;
   value?:
     | {
@@ -947,6 +1302,172 @@ export interface MediaSelect<T extends boolean = true> {
               filesize?: T;
               filename?: T;
             };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "orders_select".
+ */
+export interface OrdersSelect<T extends boolean = true> {
+  number?: T;
+  status?: T;
+  channel?: T;
+  legacyWooId?: T;
+  customerName?: T;
+  email?: T;
+  phone?: T;
+  personType?: T;
+  document?: T;
+  customer?: T;
+  items?:
+    | T
+    | {
+        product?: T;
+        productName?: T;
+        variantLabel?: T;
+        sku?: T;
+        qty?: T;
+        unitPrice?: T;
+        lotPrice?: T;
+        lineTotal?: T;
+        personalization?: T;
+        addons?: T;
+        artFile?: T;
+        artProof?: T;
+        unitCost?: T;
+        id?: T;
+      };
+  shippingAddress?:
+    | T
+    | {
+        postalCode?: T;
+        street?: T;
+        number?: T;
+        complement?: T;
+        district?: T;
+        city?: T;
+        state?: T;
+      };
+  shippingService?: T;
+  trackingCode?: T;
+  eventType?: T;
+  eventDate?: T;
+  productionDeadline?: T;
+  customerNote?: T;
+  subtotal?: T;
+  shippingTotal?: T;
+  discountTotal?: T;
+  total?: T;
+  paymentMethod?: T;
+  installments?: T;
+  couponCode?: T;
+  mercadoPago?:
+    | T
+    | {
+        paymentId?: T;
+        status?: T;
+        feeCents?: T;
+        netReceivedCents?: T;
+        moneyReleaseDate?: T;
+      };
+  datePaid?: T;
+  leadRef?: T;
+  attribution?: T;
+  conversionsSent?: T;
+  events?:
+    | T
+    | {
+        at?: T;
+        type?: T;
+        message?: T;
+        actor?: T;
+        id?: T;
+      };
+  notes?:
+    | T
+    | {
+        visibleToCustomer?: T;
+        text?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "carts_select".
+ */
+export interface CartsSelect<T extends boolean = true> {
+  token?: T;
+  status?: T;
+  items?:
+    | T
+    | {
+        product?: T;
+        variantKey?: T;
+        qty?: T;
+        personalization?: T;
+        addonIds?: T;
+        id?: T;
+      };
+  email?: T;
+  phone?: T;
+  customer?: T;
+  couponCode?: T;
+  lastActivityAt?: T;
+  convertedOrderNumber?: T;
+  attribution?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "customers_select".
+ */
+export interface CustomersSelect<T extends boolean = true> {
+  name?: T;
+  phone?: T;
+  personType?: T;
+  document?: T;
+  addresses?:
+    | T
+    | {
+        label?: T;
+        postalCode?: T;
+        street?: T;
+        number?: T;
+        complement?: T;
+        district?: T;
+        city?: T;
+        state?: T;
+        isDefault?: T;
+        id?: T;
+      };
+  optIns?:
+    | T
+    | {
+        whatsappStatus?: T;
+        marketing?: T;
+        log?: T;
+      };
+  metaOptOut?: T;
+  legacyWooId?: T;
+  notes?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
       };
 }
 /**

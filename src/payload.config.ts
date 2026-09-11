@@ -14,6 +14,9 @@ import { Addons } from './collections/catalog/Addons.ts'
 import { Attributes, AttributeTerms } from './collections/catalog/Attributes.ts'
 import { Products } from './collections/catalog/Products.ts'
 import { Categories, Occasions, Tags } from './collections/catalog/Taxonomies.ts'
+import { Carts } from './collections/commerce/Carts.ts'
+import { Customers } from './collections/commerce/Customers.ts'
+import { Orders } from './collections/commerce/Orders.ts'
 import { StoreSettings } from './globals/StoreSettings.ts'
 
 const filename = fileURLToPath(import.meta.url)
@@ -71,6 +74,10 @@ export default buildConfig({
     Addons,
     Tags,
     Media,
+    // Vendas
+    Orders,
+    Carts,
+    Customers,
     // Configurações
     Users,
   ],
