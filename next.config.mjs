@@ -2,6 +2,11 @@ import { withPayload } from '@payloadcms/next/withPayload'
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // As URLs do site atual terminam com barra (/product/vela.../), e é assim
+  // que elas estão nos anúncios ativos e no índice do Google. Manter o mesmo
+  // formato evita um redirecionamento a cada visita vinda de anúncio.
+  trailingSlash: true,
+
   // As funções rodam em São Paulo (gru1) para reduzir latência com o banco
   // Neon em sa-east-1 e com as APIs do Mercado Pago e Melhor Envio.
   // A região gru1 só existe no plano Vercel Pro.
