@@ -79,6 +79,7 @@ export interface Config {
     orders: Order;
     carts: Cart;
     customers: Customer;
+    'integration-events': IntegrationEvent;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -98,6 +99,7 @@ export interface Config {
     orders: OrdersSelect<false> | OrdersSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
+    'integration-events': IntegrationEventsSelect<false> | IntegrationEventsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -918,6 +920,44 @@ export interface Cart {
   createdAt: string;
 }
 /**
+ * Tudo que a loja envia sozinha: e-mails para a cliente e dados para Meta e Google. Se algo falhar, aparece aqui.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "integration-events".
+ */
+export interface IntegrationEvent {
+  id: number;
+  tipo: 'email' | 'meta_capi' | 'ga4' | 'google_ads' | 'whatsapp' | 'dre';
+  situacao: 'pendente' | 'enviado' | 'falhou' | 'desistiu';
+  order?: (number | null) | Order;
+  /**
+   * Impede o mesmo aviso de sair duas vezes quando o mesmo fato chega repetido — o webhook do Mercado Pago faz isso com frequência.
+   */
+  dedupeKey: string;
+  payload?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  tentativas?: number | null;
+  proximaTentativaEm?: string | null;
+  enviadoEm?: string | null;
+  /**
+   * A resposta que o serviço devolveu na última tentativa.
+   */
+  erro?: string | null;
+  /**
+   * Marque e salve para colocar este envio de volta na fila.
+   */
+  reenviar?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Quem pode entrar no painel e o que cada pessoa enxerga.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1021,6 +1061,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'customers';
         value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'integration-events';
+        value: number | IntegrationEvent;
       } | null)
     | ({
         relationTo: 'users';
@@ -1491,6 +1535,24 @@ export interface CustomersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "integration-events_select".
+ */
+export interface IntegrationEventsSelect<T extends boolean = true> {
+  tipo?: T;
+  situacao?: T;
+  order?: T;
+  dedupeKey?: T;
+  payload?: T;
+  tentativas?: T;
+  proximaTentativaEm?: T;
+  enviadoEm?: T;
+  erro?: T;
+  reenviar?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

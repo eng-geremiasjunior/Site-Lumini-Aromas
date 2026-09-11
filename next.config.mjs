@@ -8,7 +8,7 @@ const nextConfig = {
   trailingSlash: true,
 
   // As funções rodam em São Paulo (gru1) para reduzir latência com o banco
-  // Neon em sa-east-1 e com as APIs do Mercado Pago e Melhor Envio.
+  // Supabase em sa-east-1 e com as APIs do Mercado Pago e Melhor Envio.
   // A região gru1 só existe no plano Vercel Pro.
   images: {
     remotePatterns: [

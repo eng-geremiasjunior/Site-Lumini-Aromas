@@ -4,7 +4,9 @@ import { admins, owner, staff } from '../../access/roles.ts'
 import { money } from '../../fields/money.ts'
 import { randomUUID } from 'node:crypto'
 
-import { ORDER_STATUS_OPTIONS } from '../../commerce/orders/statuses.ts'
+import { ORDER_STATUS_OPTIONS, type OrderStatus } from '../../commerce/orders/statuses.ts'
+import { eventosDaTransicao } from '../../commerce/integrations/outbox.ts'
+import { enfileirar } from '../../lib/outbox.ts'
 
 /**
  * Pedido.
@@ -35,6 +37,26 @@ export const Orders: CollectionConfig = {
     delete: owner,
   },
   hooks: {
+    /**
+     * Um único caminho de efeitos colaterais.
+     *
+     * Mudou a situação do pedido — pelo checkout, pelo webhook do Mercado
+     * Pago, pela aprovação da arte ou pela mão do dono no painel —, tudo o
+     * que precisa sair (e-mail agora; Meta, Google e DRE depois) entra na
+     * caixa de saída aqui, e só aqui. Regra espalhada por tela é como o
+     * WooCommerce deixava a conversão da Meta se perder em silêncio.
+     */
+    afterChange: [
+      async ({ doc, previousDoc, operation, req }) => {
+        const de = operation === 'create' ? null : (previousDoc?.status as OrderStatus | undefined)
+        const para = doc.status as OrderStatus
+
+        const eventos = eventosDaTransicao({ numero: String(doc.number), de, para })
+        if (eventos.length > 0) await enfileirar(req.payload, eventos, doc.id, req)
+
+        return doc
+      },
+    ],
     beforeChange: [
       ({ data, operation }) => {
         // Código de acesso ao pedido, gerado uma vez e nunca mostrado ao
