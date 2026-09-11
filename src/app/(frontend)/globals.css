@@ -1,0 +1,60 @@
+/*
+ * Base mínima da vitrine.
+ * O design de luxo virá do Claude Design; aqui ficam apenas as variáveis
+ * e o reset, para a página nascer legível e não herdar estilo do painel.
+ */
+
+:root {
+  color-scheme: light;
+
+  --lumini-ink: #2b2622;
+  --lumini-ink-soft: #6b6259;
+  --lumini-cream: #faf7f2;
+  --lumini-gold: #b08d57;
+  --lumini-line: #e6ded2;
+
+  --lumini-font-body:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --lumini-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--lumini-cream);
+  color: var(--lumini-ink);
+  font-family: var(--lumini-font-body);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--lumini-font-display);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.2;
+  margin: 0 0 0.5em;
+}
+
+a {
+  color: inherit;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

@@ -1,0 +1,42 @@
+{
+  "name": "lumini-aromas",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Plataforma de e-commerce da Lumini Aromas - lembrancinhas de luxo para eventos",
+  "type": "module",
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "scripts": {
+    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
+    "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
+    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "test": "node --test \"src/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
+    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
+    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
+    "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
+    "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create"
+  },
+  "dependencies": {
+    "@payloadcms/db-postgres": "3.88.0",
+    "@payloadcms/next": "3.88.0",
+    "@payloadcms/richtext-lexical": "3.88.0",
+    "@payloadcms/storage-s3": "3.88.0",
+    "@payloadcms/translations": "3.88.0",
+    "graphql": "16.14.2",
+    "next": "16.3.4",
+    "payload": "3.88.0",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "sharp": "0.35.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "cross-env": "^10.1.0",
+    "typescript": "5.9.3"
+  }
+}

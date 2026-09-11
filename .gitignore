@@ -1,0 +1,32 @@
+node_modules/
+.next/
+out/
+build/
+dist/
+
+# Segredos: nunca versionar. Em produção ficam nas variáveis de ambiente da Vercel.
+.env
+.env.local
+.env.*.local
+
+# Payload gera estes arquivos; o importMap é versionado, os tipos também.
+# (mantidos no repositório de propósito para o build não depender de geração)
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+
+# Editores
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Uploads locais de desenvolvimento (em produção vão para o Cloudflare R2)
+/media/
+/public/media/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
