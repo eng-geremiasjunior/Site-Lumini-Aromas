@@ -4,17 +4,49 @@ import { getPayloadClient } from '../../lib/payload.ts'
 import { getCart } from '../cart/cart-service.ts'
 import { cotarFrete, normalizarCep } from './melhor-envio-client.ts'
 import { buildVolumes, mergeVolumes, type PackagingRule } from './packaging.ts'
-import { buildShippingOptions, fallbackOption, type ShippingOption } from './quote.ts'
-import { productionDaysFor, formatIsoDate, type ProductionRule } from './business-days.ts'
+import { buildShippingOptions, FRETE_A_COMBINAR_ID, type ShippingOption } from './quote.ts'
+import {
+  addBusinessDays,
+  formatIsoDate,
+  productionDaysFor,
+  type ProductionRule,
+} from './business-days.ts'
 
 export type FreteResultado =
-  | { ok: true; opcoes: ShippingOption[]; descartados: string[] }
+  | { ok: true; opcoes: ShippingOption[]; descartados: string[]; aviso?: string }
   | {
       ok: false
       mensagem: string
       /** Quando não dá para cotar, a loja oferece combinar pelo WhatsApp. */
       alternativa?: { label: string; whatsappUrl: string }
     }
+
+/**
+ * Parte das entregas da Lumini é negociada caso a caso, sobretudo lote
+ * grande, em que a Jadlog costuma sair bem melhor que a tabela. E, enquanto
+ * a cotação automática não está ligada, é o que permite fechar o pedido em
+ * vez de o cliente ir embora.
+ *
+ * O valor vai como zero de propósito: o frete real é combinado e cobrado à
+ * parte, e o pedido nasce aguardando confirmação.
+ */
+export { FRETE_A_COMBINAR_ID }
+
+function opcaoACombinar(producaoMin: number, producaoMax: number): ShippingOption {
+  return {
+    serviceId: FRETE_A_COMBINAR_ID,
+    serviceName: 'a combinar',
+    carrier: 'Frete',
+    priceCents: 0,
+    carrierMinDays: 0,
+    carrierMaxDays: 0,
+    totalMinDays: producaoMin,
+    totalMaxDays: producaoMax,
+    deliveryBy: addBusinessDays(formatIsoDate(new Date()), producaoMax),
+    label:
+      'Frete a combinar: entramos em contato pelo WhatsApp com o valor e o prazo antes de produzir',
+  }
+}
 
 /**
  * Cota o frete do carrinho inteiro.
@@ -69,14 +101,12 @@ export async function cotarFreteDoCarrinho(cepDestino: string): Promise<FreteRes
 
   if (volumes.length === 0) {
     return {
-      ok: false,
-      mensagem: faltaEmbalagem
-        ? 'Ainda não conseguimos calcular o frete deste item automaticamente.'
-        : 'Não foi possível montar a remessa.',
-      alternativa: fallbackOption(
-        process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5533999478774',
-        carrinho.lines[0]?.productName,
-      ),
+      ok: true,
+      opcoes: [opcaoACombinar(producaoMin, producaoMax)],
+      descartados: [],
+      aviso: faltaEmbalagem
+        ? 'Este item ainda não tem peso e medidas cadastrados, então o frete é combinado depois.'
+        : undefined,
     }
   }
 
@@ -88,12 +118,10 @@ export async function cotarFreteDoCarrinho(cepDestino: string): Promise<FreteRes
 
   if (!cotacao.ok) {
     return {
-      ok: false,
-      mensagem: cotacao.mensagem,
-      alternativa: fallbackOption(
-        process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5533999478774',
-        carrinho.lines[0]?.productName,
-      ),
+      ok: true,
+      opcoes: [opcaoACombinar(producaoMin, producaoMax)],
+      descartados: [],
+      aviso: cotacao.mensagem,
     }
   }
 
@@ -108,19 +136,19 @@ export async function cotarFreteDoCarrinho(cepDestino: string): Promise<FreteRes
 
   if (options.length === 0) {
     return {
-      ok: false,
-      mensagem:
-        'Nenhuma transportadora atende este endereço com segurança para o valor do pedido.',
-      alternativa: fallbackOption(
-        process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5533999478774',
-        carrinho.lines[0]?.productName,
+      ok: true,
+      opcoes: [opcaoACombinar(producaoMin, producaoMax)],
+      descartados: rejected.map((item) =>
+        item.detail ? `${item.serviceName}: ${item.detail}` : item.serviceName,
       ),
+      aviso:
+        'Nenhuma transportadora cobre o valor deste pedido com segurança. Combinamos a entrega com você.',
     }
   }
 
   return {
     ok: true,
-    opcoes: options,
+    opcoes: [...options, opcaoACombinar(producaoMin, producaoMax)],
     descartados: rejected.map((item) =>
       item.detail ? `${item.serviceName}: ${item.detail}` : item.serviceName,
     ),

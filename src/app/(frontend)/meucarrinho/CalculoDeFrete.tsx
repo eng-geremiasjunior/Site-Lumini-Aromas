@@ -3,6 +3,7 @@
 import { useState, useTransition } from 'react'
 
 import type { FreteResultado } from '../../../commerce/shipping/quote-cart.ts'
+import { FRETE_A_COMBINAR_ID } from '../../../commerce/shipping/quote.ts'
 import { calcularFrete } from './actions.ts'
 
 function brl(cents: number): string {
@@ -104,6 +105,19 @@ export function CalculoDeFrete({ subtotal }: { subtotal: number }) {
         </div>
       )}
 
+      {resultado?.ok && resultado.aviso && (
+        <p
+          style={{
+            marginTop: '0.9rem',
+            marginBottom: 0,
+            fontSize: '0.88rem',
+            color: 'var(--lumini-ink-soft)',
+          }}
+        >
+          {resultado.aviso}
+        </p>
+      )}
+
       {resultado?.ok && (
         <div style={{ marginTop: '1rem', display: 'grid', gap: '0.5rem' }}>
           {resultado.opcoes.map((opcao) => (
@@ -136,7 +150,11 @@ export function CalculoDeFrete({ subtotal }: { subtotal: number }) {
                 </span>
               </span>
               <span style={{ fontWeight: 600 }}>
-                {opcao.priceCents === 0 ? 'Grátis' : brl(opcao.priceCents)}
+                {opcao.serviceId === FRETE_A_COMBINAR_ID
+                  ? 'A combinar'
+                  : opcao.priceCents === 0
+                    ? 'Grátis'
+                    : brl(opcao.priceCents)}
               </span>
             </label>
           ))}

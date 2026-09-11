@@ -61,6 +61,15 @@ export type RejectedService = {
   detail?: string
 }
 
+/**
+ * Identificador da opção "frete a combinar".
+ *
+ * Fica aqui, e não no módulo que fala com o Melhor Envio, porque as telas
+ * precisam dele. Importar um valor de um módulo de servidor faria o Next
+ * tentar levar o banco de dados para dentro do navegador.
+ */
+export const FRETE_A_COMBINAR_ID = -1
+
 export type QuoteResult = {
   options: ShippingOption[]
   /** Serviços descartados, para o admin entender por que sumiram. */

@@ -600,6 +600,14 @@ export interface Addon {
  */
 export interface Order {
   id: number;
+  /**
+   * Usado no link que a cliente recebe para acompanhar o pedido.
+   */
+  trackingToken?: string | null;
+  /**
+   * Fotos das peças desta cliente sendo feitas. Aparecem na área dela e acalmam a espera. Depois servem de prova social, com autorização.
+   */
+  productionPhotos?: (number | Media)[] | null;
   number: string;
   status:
     | 'pending'
@@ -658,7 +666,14 @@ export interface Order {
           | boolean
           | null;
         artFile?: (number | null) | Media;
+        /**
+         * Assim que você anexar aqui, a cliente vê a arte na área dela e pode aprovar. Nada é produzido antes disso.
+         */
         artProof?: (number | null) | Media;
+        /**
+         * Preenchido quando a cliente aprova. É a prova de que ela viu e concordou com o rótulo antes da produção.
+         */
+        artApprovedAt?: string | null;
         /**
          * Congelado na venda. Alimenta o lucro no DRE.
          */
@@ -689,6 +704,8 @@ export interface Order {
    * Data limite calculada no momento da compra.
    */
   productionDeadline?: string | null;
+  dateShipped?: string | null;
+  dateCompleted?: string | null;
   customerNote?: string | null;
   subtotal: number;
   shippingTotal?: number | null;
@@ -1309,6 +1326,8 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "orders_select".
  */
 export interface OrdersSelect<T extends boolean = true> {
+  trackingToken?: T;
+  productionPhotos?: T;
   number?: T;
   status?: T;
   channel?: T;
@@ -1334,6 +1353,7 @@ export interface OrdersSelect<T extends boolean = true> {
         addons?: T;
         artFile?: T;
         artProof?: T;
+        artApprovedAt?: T;
         unitCost?: T;
         id?: T;
       };
@@ -1353,6 +1373,8 @@ export interface OrdersSelect<T extends boolean = true> {
   eventType?: T;
   eventDate?: T;
   productionDeadline?: T;
+  dateShipped?: T;
+  dateCompleted?: T;
   customerNote?: T;
   subtotal?: T;
   shippingTotal?: T;

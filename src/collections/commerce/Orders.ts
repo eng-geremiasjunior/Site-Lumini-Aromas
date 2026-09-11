@@ -2,6 +2,8 @@ import type { CollectionConfig } from 'payload'
 
 import { admins, owner, staff } from '../../access/roles.ts'
 import { money } from '../../fields/money.ts'
+import { randomUUID } from 'node:crypto'
+
 import { ORDER_STATUS_OPTIONS } from '../../commerce/orders/statuses.ts'
 
 /**
@@ -32,7 +34,44 @@ export const Orders: CollectionConfig = {
     update: admins,
     delete: owner,
   },
+  hooks: {
+    beforeChange: [
+      ({ data, operation }) => {
+        // Código de acesso ao pedido, gerado uma vez e nunca mostrado ao
+        // público. É o que permite a cliente abrir o pedido dela pelo link
+        // do e-mail sem criar senha, e impede alguém de adivinhar o pedido
+        // do vizinho trocando o número na barra de endereço.
+        if (operation === 'create' && !data.trackingToken) {
+          data.trackingToken = randomUUID()
+        }
+        return data
+      },
+    ],
+  },
   fields: [
+    {
+      name: 'trackingToken',
+      type: 'text',
+      label: 'Código de acesso',
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description: 'Usado no link que a cliente recebe para acompanhar o pedido.',
+      },
+    },
+    {
+      name: 'productionPhotos',
+      type: 'upload',
+      relationTo: 'media',
+      hasMany: true,
+      label: 'Fotos da produção',
+      admin: {
+        description:
+          'Fotos das peças desta cliente sendo feitas. Aparecem na área dela e acalmam a espera. Depois servem de prova social, com autorização.',
+      },
+    },
     // ---------------------------------------------------------------- sidebar
     {
       name: 'number',
@@ -203,6 +242,20 @@ export const Orders: CollectionConfig = {
                   type: 'upload',
                   relationTo: 'media',
                   label: 'Prova de arte enviada ao cliente',
+                  admin: {
+                    description:
+                      'Assim que você anexar aqui, a cliente vê a arte na área dela e pode aprovar. Nada é produzido antes disso.',
+                  },
+                },
+                {
+                  name: 'artApprovedAt',
+                  type: 'date',
+                  label: 'Arte aprovada em',
+                  admin: {
+                    readOnly: true,
+                    description:
+                      'Preenchido quando a cliente aprova. É a prova de que ela viu e concordou com o rótulo antes da produção.',
+                  },
                 },
                 money({
                   name: 'unitCost',
@@ -284,6 +337,23 @@ export const Orders: CollectionConfig = {
               type: 'date',
               label: 'Prazo prometido',
               admin: { description: 'Data limite calculada no momento da compra.' },
+            },
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'dateShipped',
+                  type: 'date',
+                  label: 'Despachado em',
+                  admin: { width: '50%', readOnly: true },
+                },
+                {
+                  name: 'dateCompleted',
+                  type: 'date',
+                  label: 'Entregue em',
+                  admin: { width: '50%', readOnly: true },
+                },
+              ],
             },
             {
               name: 'customerNote',
