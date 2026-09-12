@@ -27,6 +27,8 @@ import { BotaoNovoPedido as BotaoNovoPedido_893d60d1934109ac45449482c127b685 } f
 import { BotaoResultado as BotaoResultado_578b2a1aa03f41cebe75a00541f6f9eb } from '@/admin/BotaoResultado'
 import { NovoPedido as NovoPedido_fc640eee7d6f2ec2ea02ae4cc19ea0fd } from '@/admin/NovoPedido'
 import { Dre as Dre_5f8e4da819b44fa24a5a02cbfae26f45 } from '@/admin/dre/Dre'
+import { ListaDeCompras as ListaDeCompras_8462a6bd0cefa70708f60a2e417adc42 } from '@/admin/materiais/ListaDeCompras'
+import { ImportarAnuncios as ImportarAnuncios_825addd5d6da9eb82fce25c897c42b06 } from '@/admin/marketing/ImportarAnuncios'
 import { RelatorioDoMes as RelatorioDoMes_212f8f3498956724e1a6549626bacefd } from '@/admin/dre/Relatorio'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
@@ -61,6 +63,8 @@ export const importMap = {
   "@/admin/BotaoResultado#BotaoResultado": BotaoResultado_578b2a1aa03f41cebe75a00541f6f9eb,
   "@/admin/NovoPedido#NovoPedido": NovoPedido_fc640eee7d6f2ec2ea02ae4cc19ea0fd,
   "@/admin/dre/Dre#Dre": Dre_5f8e4da819b44fa24a5a02cbfae26f45,
+  "@/admin/materiais/ListaDeCompras#ListaDeCompras": ListaDeCompras_8462a6bd0cefa70708f60a2e417adc42,
+  "@/admin/marketing/ImportarAnuncios#ImportarAnuncios": ImportarAnuncios_825addd5d6da9eb82fce25c897c42b06,
   "@/admin/dre/Relatorio#RelatorioDoMes": RelatorioDoMes_212f8f3498956724e1a6549626bacefd,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

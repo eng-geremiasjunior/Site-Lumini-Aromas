@@ -85,6 +85,8 @@ export interface Config {
     'integration-events': IntegrationEvent;
     'finance-categories': FinanceCategory;
     'ledger-entries': LedgerEntry;
+    campaigns: Campaign;
+    supplies: Supply;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -110,6 +112,8 @@ export interface Config {
     'integration-events': IntegrationEventsSelect<false> | IntegrationEventsSelect<true>;
     'finance-categories': FinanceCategoriesSelect<false> | FinanceCategoriesSelect<true>;
     'ledger-entries': LedgerEntriesSelect<false> | LedgerEntriesSelect<true>;
+    campaigns: CampaignsSelect<false> | CampaignsSelect<true>;
+    supplies: SuppliesSelect<false> | SuppliesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -441,7 +445,47 @@ export interface Product {
     shelfLifeMonths?: number | null;
   };
   /**
-   * Matéria-prima, embalagem e mão de obra. Entra no DRE como custo do produto vendido. Fica gravado no pedido no dia da venda.
+   * Preencha na unidade em que você usa: 1 copo, 60 ml de cera, 35 cm de fita. A conversão para quilo, caixa e rolo é feita na lista de compras.
+   */
+  materiais?:
+    | {
+        vinculo: 'fixo' | 'escolha' | 'proporcional';
+        insumo?: (number | null) | Supply;
+        /**
+         * Escreva "aroma" para a variação do produto, ou o rótulo exato do campo de personalização — por exemplo "Cor do laço".
+         */
+        campo?: string | null;
+        /**
+         * Lavanda usa a essência de lavanda; verde oliva usa a fita verde oliva. É o que faz a lista de compras sair separada, porque são frascos e rolos diferentes.
+         */
+        opcoes?:
+          | {
+              valor: string;
+              insumo: number | Supply;
+              id?: string | null;
+            }[]
+          | null;
+        /**
+         * Na unidade de uso do material: 1, 60, 35.
+         */
+        quantidadePorPeca?: number | null;
+        /**
+         * Marque quando o material é comprado por peso mas você mede por volume — o copo recebe 60 ml de cera. A densidade cadastrada no material faz a conversão.
+         */
+        informadaEmMililitros?: boolean | null;
+        /**
+         * Normalmente a cera.
+         */
+        insumoBase?: (number | null) | Supply;
+        /**
+         * Na unidade do material base. 200 ml de essência para cada 7000 g de cera: escreva 7000 aqui e 200 acima.
+         */
+        paraCada?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Matéria-prima, embalagem e mão de obra. Entra no DRE como custo do produto vendido, e fica gravado no pedido no dia da venda. Com a ficha de materiais preenchida, este valor é recalculado sozinho a cada compra de insumo — não precisa digitar.
    */
   unitCost?: number | null;
   /**
@@ -690,6 +734,58 @@ export interface Addon {
    */
   flatPrice?: number | null;
   active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Cera, vidro, pavio, fita, essência, caixa. O que entra na peça.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supplies".
+ */
+export interface Supply {
+  id: number;
+  /**
+   * Ex.: Cera de soja, Copo de vidro 70 ml, Fita verde oliva.
+   */
+  nome: string;
+  unidadeDeUso: 'un' | 'g' | 'ml' | 'cm';
+  unidadeDeCompra: 'unidade' | 'kg' | 'litro' | 'metro' | 'rolo' | 'caixa';
+  /**
+   * Na unidade de uso. Um quilo de cera = 1000 (gramas). Uma caixa de pavio com 50 = 50 (unidades). Um rolo de fita de 50 metros = 5000 (centímetros). Um litro de essência = 1000 (mililitros).
+   */
+  quantidadePorEmbalagem: number;
+  /**
+   * Resíduo na panela, evaporação, manuseio. Cera e essência têm; vidro não tem.
+   */
+  perdaPercentual?: number | null;
+  /**
+   * A ponte entre o que se compra por peso e o que se envasa por volume. Cera de soja e coco ficam entre 0,85 e 0,90. Com 0,86, um copo de 60 ml leva 51,6 g.
+   */
+  densidade?: number | null;
+  /**
+   * Na unidade de uso. Descontado da lista de compras. Deixe vazio se preferir sempre comprar tudo.
+   */
+  estoqueAtual?: number | null;
+  /**
+   * Cada compra com o que foi pago. O preço do material sai daqui — por isso não existe campo de preço.
+   */
+  compras?:
+    | {
+        em: string;
+        /**
+         * Quilos, caixas, rolos.
+         */
+        embalagens: number;
+        valorPago: number;
+        fornecedor?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Calculado a partir das compras. Mostra a faixa real em vez de um número que finge ser exato.
+   */
+  precoAtual?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1343,6 +1439,29 @@ export interface LedgerEntry {
    */
   pagoEm?: string | null;
   /**
+   * Preenchido sozinho ao importar o relatório de anúncios. Um lançamento por campanha, por mês.
+   */
+  campanha?: (number | null) | Campaign;
+  /**
+   * Vem junto do relatório colado. Custo por clique e por resultado são calculados a partir daqui, e não copiados — assim continuam batendo com o valor lançado.
+   */
+  desempenho?: {
+    /**
+     * Pessoas distintas.
+     */
+    alcance?: number | null;
+    impressoes?: number | null;
+    cliques?: number | null;
+    /**
+     * Conversas, cadastros ou compras.
+     */
+    resultados?: number | null;
+  };
+  /**
+   * Lançamento importado é substituído ao importar o mesmo mês de novo.
+   */
+  origem?: ('manual' | 'importado') | null;
+  /**
    * Nota, recibo ou print. Opcional, mas ajuda no fechamento com o contador.
    */
   comprovante?: (number | null) | Media;
@@ -1350,6 +1469,32 @@ export interface LedgerEntry {
    * Só quando a despesa é de um pedido específico. Ex.: um frete extra combinado.
    */
   pedido?: (number | null) | Order;
+  observacao?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Criadas sozinhas ao importar o relatório de anúncios.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaigns".
+ */
+export interface Campaign {
+  id: number;
+  /**
+   * Exatamente como aparece na plataforma, para o vínculo se manter.
+   */
+  nome: string;
+  plataforma: 'Meta' | 'Google' | 'Outros';
+  objetivo?: ('mensagens' | 'venda' | 'remarketing' | 'alcance') | null;
+  ativa?: boolean | null;
+  /**
+   * Preenchido sozinho quando a integração com a API existir. Serve para o vínculo sobreviver a uma troca de nome.
+   */
+  idExterno?: string | null;
+  /**
+   * O que você testou nessa campanha, para lembrar daqui a três meses.
+   */
   observacao?: string | null;
   updatedAt: string;
   createdAt: string;
@@ -1482,6 +1627,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'ledger-entries';
         value: number | LedgerEntry;
+      } | null)
+    | ({
+        relationTo: 'campaigns';
+        value: number | Campaign;
+      } | null)
+    | ({
+        relationTo: 'supplies';
+        value: number | Supply;
       } | null)
     | ({
         relationTo: 'users';
@@ -1675,6 +1828,25 @@ export interface ProductsSelect<T extends boolean = true> {
         container?: T;
         includes?: T;
         shelfLifeMonths?: T;
+      };
+  materiais?:
+    | T
+    | {
+        vinculo?: T;
+        insumo?: T;
+        campo?: T;
+        opcoes?:
+          | T
+          | {
+              valor?: T;
+              insumo?: T;
+              id?: T;
+            };
+        quantidadePorPeca?: T;
+        informadaEmMililitros?: T;
+        insumoBase?: T;
+        paraCada?: T;
+        id?: T;
       };
   unitCost?: T;
   fiscalAnnex?: T;
@@ -2157,9 +2329,58 @@ export interface LedgerEntriesSelect<T extends boolean = true> {
   valor?: T;
   competencia?: T;
   pagoEm?: T;
+  campanha?: T;
+  desempenho?:
+    | T
+    | {
+        alcance?: T;
+        impressoes?: T;
+        cliques?: T;
+        resultados?: T;
+      };
+  origem?: T;
   comprovante?: T;
   pedido?: T;
   observacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "campaigns_select".
+ */
+export interface CampaignsSelect<T extends boolean = true> {
+  nome?: T;
+  plataforma?: T;
+  objetivo?: T;
+  ativa?: T;
+  idExterno?: T;
+  observacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "supplies_select".
+ */
+export interface SuppliesSelect<T extends boolean = true> {
+  nome?: T;
+  unidadeDeUso?: T;
+  unidadeDeCompra?: T;
+  quantidadePorEmbalagem?: T;
+  perdaPercentual?: T;
+  densidade?: T;
+  estoqueAtual?: T;
+  compras?:
+    | T
+    | {
+        em?: T;
+        embalagens?: T;
+        valorPago?: T;
+        fornecedor?: T;
+        id?: T;
+      };
+  precoAtual?: T;
   updatedAt?: T;
   createdAt?: T;
 }

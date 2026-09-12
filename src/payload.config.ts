@@ -23,6 +23,8 @@ import { IntegrationEvents } from './collections/commerce/IntegrationEvents.ts'
 import { Orders } from './collections/commerce/Orders.ts'
 import { FinanceCategories } from './collections/finance/FinanceCategories.ts'
 import { LedgerEntries } from './collections/finance/LedgerEntries.ts'
+import { Campaigns } from './collections/finance/Campaigns.ts'
+import { Supplies } from './collections/finance/Supplies.ts'
 import { StoreSettings } from './globals/StoreSettings.ts'
 
 const filename = fileURLToPath(import.meta.url)
@@ -73,6 +75,14 @@ export default buildConfig({
           Component: '@/admin/dre/Dre#Dre',
           path: '/dre',
         },
+        listaDeMateriais: {
+          Component: '@/admin/materiais/ListaDeCompras#ListaDeCompras',
+          path: '/materiais',
+        },
+        importarAnuncios: {
+          Component: '@/admin/marketing/ImportarAnuncios#ImportarAnuncios',
+          path: '/importar-anuncios',
+        },
         relatorioDoMes: {
           Component: '@/admin/dre/Relatorio#RelatorioDoMes',
           path: '/relatorio-do-mes',
@@ -111,6 +121,8 @@ export default buildConfig({
     // Financeiro
     FinanceCategories,
     LedgerEntries,
+    Campaigns,
+    Supplies,
     // Configurações
     Users,
   ],

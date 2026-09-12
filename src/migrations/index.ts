@@ -15,6 +15,7 @@ import * as migration_20260912_173547_logo_no_carrinho from './20260912_173547_l
 import * as migration_20260912_174717_ocasioes from './20260912_174717_ocasioes';
 import * as migration_20260912_175534_pagina_de_venda from './20260912_175534_pagina_de_venda';
 import * as migration_20260912_202105_financeiro from './20260912_202105_financeiro';
+import * as migration_20260912_214102_materiais_e_campanhas from './20260912_214102_materiais_e_campanhas';
 
 export const migrations = [
   {
@@ -100,6 +101,11 @@ export const migrations = [
   {
     up: migration_20260912_202105_financeiro.up,
     down: migration_20260912_202105_financeiro.down,
-    name: '20260912_202105_financeiro'
+    name: '20260912_202105_financeiro',
+  },
+  {
+    up: migration_20260912_214102_materiais_e_campanhas.up,
+    down: migration_20260912_214102_materiais_e_campanhas.down,
+    name: '20260912_214102_materiais_e_campanhas'
   },
 ];

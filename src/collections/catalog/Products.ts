@@ -44,6 +44,35 @@ export const Products: CollectionConfig = {
   hooks: {
     beforeChange: [
       syncVariants,
+      async ({ data, req, originalDoc }) => {
+        // Com a ficha de materiais preenchida, o custo da peça deixa de ser
+        // digitado: ele vem do que foi realmente comprado. Um número
+        // digitado envelhece sem avisar; este não.
+        if (!Array.isArray(data.materiais) || data.materiais.length === 0) return data
+
+        const { carregarInsumos, fichaDoDocumento } = await import(
+          '../../commerce/materials/ficha.ts'
+        )
+        const { custoDaPeca } = await import('../../commerce/materials/materiais.ts')
+
+        const insumos = await carregarInsumos(
+          req.payload as unknown as Parameters<typeof carregarInsumos>[0],
+          req,
+        )
+
+        const ficha = fichaDoDocumento({
+          id: data.id ?? originalDoc?.id ?? 'novo',
+          materiais: data.materiais,
+        })
+
+        const custo = custoDaPeca(ficha, insumos, {}, 'medio')
+
+        // Falta preço de algum insumo: mantém o que estava, em vez de zerar
+        // o custo e inflar a margem do mês.
+        if (custo !== null) data.unitCost = custo
+
+        return data
+      },
       ({ data }) => {
         // A tabela de lotes é sempre recalculada aqui, nunca recebida do formulário.
         if (typeof data.unitPrice !== 'number' || data.unitPrice <= 0) return data
@@ -680,6 +709,145 @@ export const Products: CollectionConfig = {
           ],
         },
 
+        // --------------------------------------------------------- Materiais
+        {
+          label: 'Materiais',
+          description:
+            'O que entra em UMA peça. É daqui que sai a lista de compras e o custo do produto.',
+          fields: [
+            {
+              name: 'materiais',
+              type: 'array',
+              label: 'Ficha de materiais',
+              labels: { singular: 'Material', plural: 'Materiais' },
+              admin: {
+                description:
+                  'Preencha na unidade em que você usa: 1 copo, 60 ml de cera, 35 cm de fita. A conversão para quilo, caixa e rolo é feita na lista de compras.',
+              },
+              fields: [
+                {
+                  name: 'vinculo',
+                  type: 'select',
+                  label: 'De onde vem o material',
+                  required: true,
+                  defaultValue: 'fixo',
+                  options: [
+                    { label: 'Sempre o mesmo (copo, caixinha, pavio, cera)', value: 'fixo' },
+                    {
+                      label: 'Depende da escolha da cliente (essência do aroma, cor da fita)',
+                      value: 'escolha',
+                    },
+                    {
+                      label: 'Proporcional a outro material (essência por quilo de cera)',
+                      value: 'proporcional',
+                    },
+                  ],
+                },
+                {
+                  name: 'insumo',
+                  type: 'relationship',
+                  relationTo: 'supplies',
+                  label: 'Material',
+                  admin: { condition: (_, irmaos) => irmaos?.vinculo !== 'escolha' },
+                },
+                {
+                  name: 'campo',
+                  type: 'text',
+                  label: 'Qual escolha define o material',
+                  admin: {
+                    condition: (_, irmaos) => irmaos?.vinculo === 'escolha',
+                    description:
+                      'Escreva "aroma" para a variação do produto, ou o rótulo exato do campo de personalização — por exemplo "Cor do laço".',
+                  },
+                },
+                {
+                  name: 'opcoes',
+                  type: 'array',
+                  label: 'Cada resposta e o seu material',
+                  labels: { singular: 'Resposta', plural: 'Respostas' },
+                  admin: {
+                    condition: (_, irmaos) => irmaos?.vinculo === 'escolha',
+                    description:
+                      'Lavanda usa a essência de lavanda; verde oliva usa a fita verde oliva. É o que faz a lista de compras sair separada, porque são frascos e rolos diferentes.',
+                  },
+                  fields: [
+                    {
+                      type: 'row',
+                      fields: [
+                        {
+                          name: 'valor',
+                          type: 'text',
+                          label: 'Resposta',
+                          required: true,
+                          admin: { width: '50%' },
+                        },
+                        {
+                          name: 'insumo',
+                          type: 'relationship',
+                          relationTo: 'supplies',
+                          label: 'Material',
+                          required: true,
+                          admin: { width: '50%' },
+                        },
+                      ],
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  fields: [
+                    {
+                      name: 'quantidadePorPeca',
+                      type: 'number',
+                      label: 'Quanto vai em uma peça',
+                      min: 0,
+                      admin: {
+                        width: '50%',
+                        description: 'Na unidade de uso do material: 1, 60, 35.',
+                      },
+                    },
+                    {
+                      name: 'informadaEmMililitros',
+                      type: 'checkbox',
+                      label: 'Informei em mililitros',
+                      admin: {
+                        width: '50%',
+                        condition: (_, irmaos) => irmaos?.vinculo !== 'proporcional',
+                        description:
+                          'Marque quando o material é comprado por peso mas você mede por volume — o copo recebe 60 ml de cera. A densidade cadastrada no material faz a conversão.',
+                      },
+                    },
+                  ],
+                },
+                {
+                  type: 'row',
+                  admin: { condition: (_, irmaos) => irmaos?.vinculo === 'proporcional' },
+                  fields: [
+                    {
+                      name: 'insumoBase',
+                      type: 'relationship',
+                      relationTo: 'supplies',
+                      label: 'Proporcional a',
+                      admin: { width: '50%', description: 'Normalmente a cera.' },
+                    },
+                    {
+                      name: 'paraCada',
+                      type: 'number',
+                      label: 'Para cada',
+                      min: 0,
+                      admin: {
+                        width: '50%',
+                        description:
+                          'Na unidade do material base. 200 ml de essência para cada 7000 g de cera: escreva 7000 aqui e 200 acima.',
+                      },
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+
         // ----------------------------------------------------- Fiscal e custo
         {
           label: 'Fiscal e custo',
@@ -690,7 +858,7 @@ export const Products: CollectionConfig = {
               label: 'Custo de uma peça',
               admin: {
                 description:
-                  'Matéria-prima, embalagem e mão de obra. Entra no DRE como custo do produto vendido. Fica gravado no pedido no dia da venda.',
+                  'Matéria-prima, embalagem e mão de obra. Entra no DRE como custo do produto vendido, e fica gravado no pedido no dia da venda. Com a ficha de materiais preenchida, este valor é recalculado sozinho a cada compra de insumo — não precisa digitar.',
               },
             }),
             {

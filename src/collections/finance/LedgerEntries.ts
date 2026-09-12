@@ -91,6 +91,70 @@ export const LedgerEntries: CollectionConfig = {
       ],
     },
     {
+      name: 'campanha',
+      type: 'relationship',
+      relationTo: 'campaigns',
+      label: 'Campanha',
+      admin: {
+        description:
+          'Preenchido sozinho ao importar o relatório de anúncios. Um lançamento por campanha, por mês.',
+      },
+    },
+    {
+      name: 'desempenho',
+      type: 'group',
+      label: 'O que a campanha entregou',
+      admin: {
+        condition: (_, irmaos) => Boolean(irmaos?.campanha),
+        description:
+          'Vem junto do relatório colado. Custo por clique e por resultado são calculados a partir daqui, e não copiados — assim continuam batendo com o valor lançado.',
+      },
+      fields: [
+        {
+          type: 'row',
+          fields: [
+            {
+              name: 'alcance',
+              type: 'number',
+              label: 'Alcance',
+              min: 0,
+              admin: { width: '25%', description: 'Pessoas distintas.' },
+            },
+            {
+              name: 'impressoes',
+              type: 'number',
+              label: 'Impressões',
+              min: 0,
+              admin: { width: '25%' },
+            },
+            { name: 'cliques', type: 'number', label: 'Cliques', min: 0, admin: { width: '25%' } },
+            {
+              name: 'resultados',
+              type: 'number',
+              label: 'Resultados',
+              min: 0,
+              admin: { width: '25%', description: 'Conversas, cadastros ou compras.' },
+            },
+          ],
+        },
+      ],
+    },
+    {
+      name: 'origem',
+      type: 'select',
+      label: 'Origem',
+      defaultValue: 'manual',
+      options: [
+        { label: 'Digitado', value: 'manual' },
+        { label: 'Importado do relatório de anúncios', value: 'importado' },
+      ],
+      admin: {
+        readOnly: true,
+        position: 'sidebar',
+        description: 'Lançamento importado é substituído ao importar o mesmo mês de novo.',
+      },
+    },
+    {
       name: 'comprovante',
       type: 'upload',
       relationTo: 'media',
