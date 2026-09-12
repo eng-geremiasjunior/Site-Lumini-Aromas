@@ -428,6 +428,16 @@ export const Orders: CollectionConfig = {
               ],
             },
             {
+              name: 'paymentReceipt',
+              type: 'upload',
+              relationTo: 'media',
+              label: 'Comprovante de pagamento',
+              admin: {
+                description:
+                  'O print que a cliente manda no WhatsApp. Guardado junto do pedido — é o que sustenta a sua versão se houver contestação depois.',
+              },
+            },
+            {
               name: 'couponCode',
               type: 'text',
               label: 'Cupom usado',

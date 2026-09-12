@@ -54,6 +54,15 @@ export default buildConfig({
     },
     components: {
       graphics: {},
+      // O botão fica antes das coleções no menu: lançar a venda do WhatsApp
+      // é a ação mais frequente do dia.
+      beforeNavLinks: ['@/admin/BotaoNovoPedido#BotaoNovoPedido'],
+      views: {
+        novoPedido: {
+          Component: '@/admin/NovoPedido#NovoPedido',
+          path: '/novo-pedido',
+        },
+      },
     },
     dateFormat: 'dd/MM/yyyy HH:mm',
   },

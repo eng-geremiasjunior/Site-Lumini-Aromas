@@ -23,6 +23,8 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { MoneyField as MoneyField_a7810204c508fa85c7adbac69bcf3ca5 } from '@/fields/MoneyField'
 import { LotTableField as LotTableField_f0de0b1e3cc7af4c3cc24afe87c33b80 } from '@/fields/LotTableField'
+import { BotaoNovoPedido as BotaoNovoPedido_893d60d1934109ac45449482c127b685 } from '@/admin/BotaoNovoPedido'
+import { NovoPedido as NovoPedido_fc640eee7d6f2ec2ea02ae4cc19ea0fd } from '@/admin/NovoPedido'
 import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
 /** @type import('payload').ImportMap */
@@ -52,5 +54,7 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@/fields/MoneyField#MoneyField": MoneyField_a7810204c508fa85c7adbac69bcf3ca5,
   "@/fields/LotTableField#LotTableField": LotTableField_f0de0b1e3cc7af4c3cc24afe87c33b80,
+  "@/admin/BotaoNovoPedido#BotaoNovoPedido": BotaoNovoPedido_893d60d1934109ac45449482c127b685,
+  "@/admin/NovoPedido#NovoPedido": NovoPedido_fc640eee7d6f2ec2ea02ae4cc19ea0fd,
   "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

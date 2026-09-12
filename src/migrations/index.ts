@@ -6,6 +6,7 @@ import * as migration_20260911_224416_minha_conta from './20260911_224416_minha_
 import * as migration_20260911_230255_caixa_de_saida from './20260911_230255_caixa_de_saida';
 import * as migration_20260911_233030_cupons from './20260911_233030_cupons';
 import * as migration_20260911_235830_carrinho_abandonado from './20260911_235830_carrinho_abandonado';
+import * as migration_20260912_043707_comprovante from './20260912_043707_comprovante';
 
 export const migrations = [
   {
@@ -46,6 +47,11 @@ export const migrations = [
   {
     up: migration_20260911_235830_carrinho_abandonado.up,
     down: migration_20260911_235830_carrinho_abandonado.down,
-    name: '20260911_235830_carrinho_abandonado'
+    name: '20260911_235830_carrinho_abandonado',
+  },
+  {
+    up: migration_20260912_043707_comprovante.up,
+    down: migration_20260912_043707_comprovante.down,
+    name: '20260912_043707_comprovante'
   },
 ];

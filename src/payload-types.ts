@@ -717,6 +717,10 @@ export interface Order {
   total: number;
   paymentMethod?: ('pix' | 'credit_card' | 'debit_card' | 'mp_link' | 'external') | null;
   installments?: number | null;
+  /**
+   * O print que a cliente manda no WhatsApp. Guardado junto do pedido — é o que sustenta a sua versão se houver contestação depois.
+   */
+  paymentReceipt?: (number | null) | Media;
   couponCode?: string | null;
   /**
    * Preenchido sozinho quando o pagamento é confirmado.
@@ -1506,6 +1510,7 @@ export interface OrdersSelect<T extends boolean = true> {
   total?: T;
   paymentMethod?: T;
   installments?: T;
+  paymentReceipt?: T;
   couponCode?: T;
   mercadoPago?:
     | T
