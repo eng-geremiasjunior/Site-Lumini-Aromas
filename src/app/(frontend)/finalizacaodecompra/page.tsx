@@ -30,6 +30,7 @@ export default async function CheckoutPage() {
       <Checkout
         subtotal={carrinho.subtotal}
         quantidadeDePecas={carrinho.totalPieces}
+        cartao={carrinho.cartaoPresente}
         cupom={
           carrinho.cupom
             ? {

@@ -15,6 +15,7 @@ import {
   type CartView,
 } from './cart-view.ts'
 import { validarCupom } from '../coupons/coupon-service.ts'
+import { conferirCartao } from '../giftcards/gift-card-service.ts'
 
 const COOKIE = 'lumini_cart'
 const TRINTA_DIAS = 60 * 60 * 24 * 30
@@ -261,6 +262,60 @@ export async function removerCupomDoCarrinho(): Promise<CartView> {
       collection: 'carts',
       id: doc.id,
       data: { couponCode: null },
+      overrideAccess: true,
+    })
+  }
+
+  return getCart()
+}
+
+/**
+ * Um campo só, para cupom e para cartão-presente.
+ *
+ * Quem digita não precisa saber a diferença entre os dois — ela sabe que
+ * recebeu um código. A loja é que descobre qual é: tenta cupom, tenta
+ * cartão, e devolve a mensagem do que fizer mais sentido.
+ */
+export async function aplicarCodigoNoCarrinho(
+  codigo: string,
+): Promise<{ ok: true; tipo: 'cupom' | 'cartao'; cart: CartView } | { ok: false; mensagem: string }> {
+  const comoCupom = await aplicarCupomNoCarrinho(codigo)
+  if (comoCupom.ok) return { ok: true, tipo: 'cupom', cart: comoCupom.cart }
+
+  const token = await lerToken()
+  const doc = token ? await buscarCarrinho(token) : null
+  if (!doc) return { ok: false, mensagem: 'Seu carrinho expirou. Monte de novo, é rapidinho.' }
+
+  const comoCartao = await conferirCartao(codigo)
+
+  if (comoCartao.ok) {
+    const payload = await getPayloadClient()
+    await payload.update({
+      collection: 'carts',
+      id: doc.id,
+      data: { giftCardCode: comoCartao.cartao.codigo },
+      overrideAccess: true,
+    })
+    return { ok: true, tipo: 'cartao', cart: await getCart() }
+  }
+
+  // Nenhum dos dois. A mensagem útil é a do cartão quando o código tem cara
+  // de cartão — "já foi usado" ajuda; "não encontramos este cupom", não.
+  const pareceCartao = codigo.replace(/[^a-zA-Z0-9]/g, '').length >= 12
+  return { ok: false, mensagem: pareceCartao ? comoCartao.motivo : comoCupom.mensagem }
+}
+
+/** Tira o cartão-presente do carrinho. */
+export async function removerCartaoDoCarrinho(): Promise<CartView> {
+  const token = await lerToken()
+  const doc = token ? await buscarCarrinho(token) : null
+
+  if (doc) {
+    const payload = await getPayloadClient()
+    await payload.update({
+      collection: 'carts',
+      id: doc.id,
+      data: { giftCardCode: null },
       overrideAccess: true,
     })
   }

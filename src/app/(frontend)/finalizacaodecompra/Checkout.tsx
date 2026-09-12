@@ -27,9 +27,11 @@ type Props = {
   quantidadeDePecas: number
   /** Cupom já conferido no servidor; o navegador nunca calcula desconto. */
   cupom: { codigo: string; desconto: number; freteGratis: boolean } | null
+  /** Cartão-presente aplicado, com o saldo disponível. */
+  cartao: { codigo: string; saldo: number } | null
 }
 
-export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
+export function Checkout({ subtotal, quantidadeDePecas, cupom, cartao }: Props) {
   const router = useRouter()
 
   const [nome, setNome] = useState('')
@@ -75,6 +77,11 @@ export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
   const freteCobrado = cupom?.freteGratis ? 0 : (opcaoFrete?.priceCents ?? 0)
   const desconto = cupom?.desconto ?? 0
   const total = Math.max(0, subtotal - desconto + freteCobrado)
+
+  // O cartão abate do total, depois do desconto e do frete. Só agora dá
+  // para saber quanto ele cobre — antes do frete o número seria chute.
+  const pagoComCartao = cartao ? Math.min(cartao.saldo, total) : 0
+  const aPagar = total - pagoComCartao
 
   function aoSairDoCep() {
     const digitos = cep.replace(/\D/g, '')
@@ -467,6 +474,9 @@ export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
           {cupom && desconto > 0 && (
             <Linha rotulo={`Cupom ${cupom.codigo}`} valor={`− ${brl(desconto)}`} />
           )}
+          {cartao && pagoComCartao > 0 && (
+            <Linha rotulo="Cartão-presente" valor={`− ${brl(pagoComCartao)}`} />
+          )}
           <Linha
             rotulo="Frete"
             valor={
@@ -493,9 +503,9 @@ export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
             alignItems: 'baseline',
           }}
         >
-          <span>Total</span>
+          <span>{pagoComCartao > 0 ? 'A pagar' : 'Total'}</span>
           <strong style={{ fontSize: '1.5rem', fontFamily: 'var(--lumini-font-display)' }}>
-            {brl(total)}
+            {brl(aPagar)}
           </strong>
         </div>
 

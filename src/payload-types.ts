@@ -81,6 +81,7 @@ export interface Config {
     carts: Cart;
     customers: Customer;
     coupons: Coupon;
+    'gift-cards': GiftCard;
     'integration-events': IntegrationEvent;
     users: User;
     'payload-kv': PayloadKv;
@@ -103,6 +104,7 @@ export interface Config {
     carts: CartsSelect<false> | CartsSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
     coupons: CouponsSelect<false> | CouponsSelect<true>;
+    'gift-cards': GiftCardsSelect<false> | GiftCardsSelect<true>;
     'integration-events': IntegrationEventsSelect<false> | IntegrationEventsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -783,6 +785,11 @@ export interface Order {
    * O print que a cliente manda no WhatsApp. Guardado junto do pedido — é o que sustenta a sua versão se houver contestação depois.
    */
   paymentReceipt?: (number | null) | Media;
+  giftCardCode?: string | null;
+  /**
+   * Sai da obrigação e vira receita só agora, quando a mercadoria é entregue.
+   */
+  giftCardTotal?: number | null;
   couponCode?: string | null;
   /**
    * Preenchido sozinho quando o pagamento é confirmado.
@@ -974,6 +981,7 @@ export interface Cart {
    */
   customer?: (number | null) | Customer;
   couponCode?: string | null;
+  giftCardCode?: string | null;
   lastActivityAt?: string | null;
   /**
    * Vai no link do e-mail de lembrete e devolve o carrinho montado. É diferente do código da sessão de propósito: o que circula por e-mail não é o mesmo que identifica o navegador.
@@ -1056,6 +1064,67 @@ export interface Coupon {
     | null;
   /**
    * Só para você: o que foi combinado, com quem e quando.
+   */
+  observacao?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Vales comprados para presentear. O saldo diminui conforme a pessoa usa.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gift-cards".
+ */
+export interface GiftCard {
+  id: number;
+  /**
+   * Gerado sozinho. É o que a pessoa digita no carrinho.
+   */
+  codigo?: string | null;
+  situacao: 'ativo' | 'usado' | 'expirado' | 'cancelado';
+  /**
+   * Use um valor que compre um lote inteiro, tirado da tabela do produto.
+   */
+  valorCentavos: number;
+  /**
+   * Diminui a cada uso.
+   */
+  saldoCentavos?: number | null;
+  /**
+   * Um ano por padrão. Prazo curto em cartão-presente é tratado como cláusula abusiva, e aqui a cliente compra para um evento que às vezes é daqui a seis meses.
+   */
+  validoAte?: string | null;
+  de?: string | null;
+  para?: string | null;
+  emailDoComprador?: string | null;
+  /**
+   * Para onde o cartão é enviado.
+   */
+  emailDoDestinatario?: string | null;
+  mensagem?: string | null;
+  /**
+   * Deixe vazio para enviar assim que o pagamento for confirmado.
+   */
+  enviarEm?: string | null;
+  enviadoEm?: string | null;
+  /**
+   * Vazio quando o cartão foi emitido à mão, numa venda de WhatsApp.
+   */
+  pedidoDeCompra?: (number | null) | Order;
+  /**
+   * Cada abatimento, na ordem.
+   */
+  usos?:
+    | {
+        em?: string | null;
+        pedido?: string | null;
+        valorCentavos?: number | null;
+        saldoDepois?: number | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Só para você.
    */
   observacao?: string | null;
   updatedAt: string;
@@ -1211,6 +1280,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'coupons';
         value: number | Coupon;
+      } | null)
+    | ({
+        relationTo: 'gift-cards';
+        value: number | GiftCard;
       } | null)
     | ({
         relationTo: 'integration-events';
@@ -1603,6 +1676,8 @@ export interface OrdersSelect<T extends boolean = true> {
   paymentMethod?: T;
   installments?: T;
   paymentReceipt?: T;
+  giftCardCode?: T;
+  giftCardTotal?: T;
   couponCode?: T;
   mercadoPago?:
     | T
@@ -1658,6 +1733,7 @@ export interface CartsSelect<T extends boolean = true> {
   customerName?: T;
   customer?: T;
   couponCode?: T;
+  giftCardCode?: T;
   lastActivityAt?: T;
   restoreToken?: T;
   recoveryStep?: T;
@@ -1739,6 +1815,37 @@ export interface CouponsSelect<T extends boolean = true> {
     | T
     | {
         email?: T;
+        id?: T;
+      };
+  observacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "gift-cards_select".
+ */
+export interface GiftCardsSelect<T extends boolean = true> {
+  codigo?: T;
+  situacao?: T;
+  valorCentavos?: T;
+  saldoCentavos?: T;
+  validoAte?: T;
+  de?: T;
+  para?: T;
+  emailDoComprador?: T;
+  emailDoDestinatario?: T;
+  mensagem?: T;
+  enviarEm?: T;
+  enviadoEm?: T;
+  pedidoDeCompra?: T;
+  usos?:
+    | T
+    | {
+        em?: T;
+        pedido?: T;
+        valorCentavos?: T;
+        saldoDepois?: T;
         id?: T;
       };
   observacao?: T;

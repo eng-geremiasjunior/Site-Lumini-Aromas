@@ -4,7 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import {
   addToCart,
-  aplicarCupomNoCarrinho,
+  aplicarCodigoNoCarrinho,
+  removerCartaoDoCarrinho,
   removerCupomDoCarrinho,
   removeCartItem,
   updateCartItemQty,
@@ -62,7 +63,7 @@ export async function calcularFrete(cep: string): Promise<FreteResultado> {
 export async function aplicarCupom(
   codigo: string,
 ): Promise<{ ok: true } | { ok: false; mensagem: string }> {
-  const resultado = await aplicarCupomNoCarrinho(codigo)
+  const resultado = await aplicarCodigoNoCarrinho(codigo)
   if (!resultado.ok) return resultado
 
   revalidatePath('/meucarrinho')
@@ -72,6 +73,13 @@ export async function aplicarCupom(
 
 export async function removerCupom(): Promise<void> {
   await removerCupomDoCarrinho()
+  revalidatePath('/meucarrinho')
+  revalidatePath('/finalizacaodecompra')
+}
+
+/** Tira o cartão-presente do carrinho. */
+export async function removerCartao(): Promise<void> {
+  await removerCartaoDoCarrinho()
   revalidatePath('/meucarrinho')
   revalidatePath('/finalizacaodecompra')
 }

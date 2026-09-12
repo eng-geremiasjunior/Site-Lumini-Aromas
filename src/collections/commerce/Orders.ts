@@ -481,6 +481,27 @@ export const Orders: CollectionConfig = {
               },
             },
             {
+              type: 'row',
+              fields: [
+                {
+                  name: 'giftCardCode',
+                  type: 'text',
+                  label: 'Cartão-presente usado',
+                  admin: { width: '50%', readOnly: true },
+                },
+                money({
+                  name: 'giftCardTotal',
+                  label: 'Pago com cartão-presente',
+                  admin: {
+                    width: '50%',
+                    readOnly: true,
+                    description:
+                      'Sai da obrigação e vira receita só agora, quando a mercadoria é entregue.',
+                  },
+                }),
+              ],
+            },
+            {
               name: 'couponCode',
               type: 'text',
               label: 'Cupom usado',

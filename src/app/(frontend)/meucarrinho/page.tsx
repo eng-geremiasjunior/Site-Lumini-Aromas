@@ -80,7 +80,11 @@ export default async function CarrinhoPage() {
               </strong>
             </div>
 
-            <Cupom codigoAtual={carrinho.cupom?.codigo ?? null} desconto={carrinho.desconto} />
+            <Cupom
+              codigoAtual={carrinho.cupom?.codigo ?? null}
+              desconto={carrinho.desconto}
+              cartao={carrinho.cartaoPresente}
+            />
 
             <a
               href="/finalizacaodecompra/"

@@ -12,6 +12,7 @@ import { priceLine, cartSubtotal, type PricedLine, type PricingAddon } from './p
 import { getProductBySlug } from '../catalog/get-product.ts'
 import { validarCupom } from '../coupons/coupon-service.ts'
 import { totalComCupom, type CupomAplicado } from '../coupons/coupon.ts'
+import { conferirCartao } from '../giftcards/gift-card-service.ts'
 
 export type CartLine = PricedLine & {
   /** Posição do item no carrinho, usada para alterar ou remover. */
@@ -30,6 +31,12 @@ export type CartView = {
   cupom: CupomAplicado | null
   /** Quanto o cupom tira do subtotal, em centavos. */
   desconto: number
+  /**
+   * Cartão-presente aplicado. O abatimento não é calculado aqui: ele depende
+   * do total, e o total só existe depois do frete. Aqui fica o saldo, que é
+   * o que a pessoa precisa ver enquanto monta o pedido.
+   */
+  cartaoPresente: { codigo: string; saldo: number } | null
   /** Total de peças no carrinho, útil no aviso de pedido mínimo. */
   totalPieces: number
   isEmpty: boolean
@@ -79,7 +86,16 @@ export async function carregarProdutoPorId(id: string) {
 }
 
 export function carrinhoVazio(token: string): CartView {
-  return { token, lines: [], subtotal: 0, cupom: null, desconto: 0, totalPieces: 0, isEmpty: true }
+  return {
+    token,
+    lines: [],
+    subtotal: 0,
+    cupom: null,
+    desconto: 0,
+    cartaoPresente: null,
+    totalPieces: 0,
+    isEmpty: true,
+  }
 }
 
 type CarrinhoDoBanco = Awaited<ReturnType<typeof buscarCarrinho>>
@@ -133,12 +149,14 @@ export async function montarVisao(
 
   const subtotal = cartSubtotal(lines)
   const cupom = await conferirCupomGuardado(doc.couponCode, lines, subtotal, doc.email)
+  const cartaoPresente = await conferirCartaoGuardado(doc.giftCardCode)
 
   return {
     token,
     lines,
     subtotal,
     cupom,
+    cartaoPresente,
     desconto: cupom ? totalComCupom(subtotal, 0, cupom).desconto : 0,
     totalPieces: lines.reduce((soma, linha) => soma + linha.qty, 0),
     isEmpty: lines.length === 0,
@@ -188,4 +206,21 @@ async function conferirCupomGuardado(
   })
 
   return resultado.ok ? resultado.cupom : null
+}
+
+/**
+ * Confere o cartão guardado no carrinho, a cada leitura.
+ *
+ * Pela mesma razão do cupom: entre o carrinho e o pagamento o saldo pode ter
+ * sido gasto em outra compra, e a pessoa não pode descobrir isso na cobrança.
+ */
+async function conferirCartaoGuardado(
+  codigo: string | null | undefined,
+): Promise<{ codigo: string; saldo: number } | null> {
+  if (!codigo) return null
+
+  const resultado = await conferirCartao(codigo)
+  if (!resultado.ok) return null
+
+  return { codigo: resultado.cartao.codigo, saldo: resultado.cartao.saldoCentavos }
 }

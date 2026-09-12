@@ -106,11 +106,6 @@ export const Carts: CollectionConfig = {
       },
     },
     {
-      type: 'row',
-      fields: [
-      ],
-    },
-    {
       name: 'customer',
       type: 'relationship',
       relationTo: 'customers',
@@ -118,6 +113,7 @@ export const Carts: CollectionConfig = {
       admin: { description: 'Preenchido quando o cliente entra na conta.' },
     },
     { name: 'couponCode', type: 'text', label: 'Cupom' },
+    { name: 'giftCardCode', type: 'text', label: 'Cartão-presente' },
     {
       name: 'lastActivityAt',
       type: 'date',

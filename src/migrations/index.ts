@@ -9,6 +9,7 @@ import * as migration_20260911_235830_carrinho_abandonado from './20260911_23583
 import * as migration_20260912_043707_comprovante from './20260912_043707_comprovante';
 import * as migration_20260912_051512_eventos from './20260912_051512_eventos';
 import * as migration_20260912_132549_presente from './20260912_132549_presente';
+import * as migration_20260912_153854_cartao_presente from './20260912_153854_cartao_presente';
 
 export const migrations = [
   {
@@ -64,6 +65,11 @@ export const migrations = [
   {
     up: migration_20260912_132549_presente.up,
     down: migration_20260912_132549_presente.down,
-    name: '20260912_132549_presente'
+    name: '20260912_132549_presente',
+  },
+  {
+    up: migration_20260912_153854_cartao_presente.up,
+    down: migration_20260912_153854_cartao_presente.down,
+    name: '20260912_153854_cartao_presente'
   },
 ];

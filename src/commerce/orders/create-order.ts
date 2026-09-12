@@ -6,6 +6,7 @@ import { cotarFreteDoCarrinho, FRETE_A_COMBINAR_ID } from '../shipping/quote-car
 import { formatIsoDate, addBusinessDays } from '../shipping/business-days.ts'
 import { totalComCupom } from '../coupons/coupon.ts'
 import { montarCartao, nomeParaEntrega } from './presente.ts'
+import { usarCartao } from '../giftcards/gift-card-service.ts'
 
 /**
  * Criação do pedido.
@@ -173,15 +174,25 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
   // O cartão é conferido aqui, no servidor, como tudo o mais: recado longo
   // demais para caber impresso não deve virar pedido e só aparecer como
   // problema na hora de embalar.
-  let cartao = null
+  let cartaoImpresso = null
   if (dados.presente) {
     const conferido = montarCartao(dados.presente)
     if (!conferido.ok) {
       return { ok: false, mensagem: conferido.mensagem, campo: conferido.campo }
     }
-    cartao = conferido.cartao
+    cartaoImpresso = conferido.cartao
   }
+
   const numero = await proximoNumero()
+
+  // O cartão-presente é debitado aqui, uma vez só, com o número do pedido
+  // já em mãos. Antes disso nada é abatido: carrinho abandonado com cartão
+  // aplicado não pode consumir saldo de ninguém.
+  let pagoComCartao = 0
+  if (carrinho.cartaoPresente) {
+    const uso = await usarCartao(carrinho.cartaoPresente.codigo, total, numero)
+    if (uso.ok) pagoComCartao = uso.abatido
+  }
   const agora = new Date().toISOString()
 
   const prazo = addBusinessDays(formatIsoDate(new Date()), freteEscolhido.totalMaxDays)
@@ -200,7 +211,7 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
       document: dados.cliente.documento,
       items: itens,
       shippingAddress: {
-        recipientName: nomeParaEntrega(cartao, dados.cliente.nome),
+        recipientName: nomeParaEntrega(cartaoImpresso, dados.cliente.nome),
         postalCode: dados.endereco.cep,
         street: dados.endereco.rua,
         number: dados.endereco.numero,
@@ -217,13 +228,20 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
       eventDate: dados.dataEvento,
       productionDeadline: prazo,
       customerNote: dados.observacao,
-      presente: cartao
-        ? { ehPresente: true, de: cartao.de, para: cartao.para, mensagem: cartao.mensagem }
+      presente: cartaoImpresso
+        ? {
+            ehPresente: true,
+            de: cartaoImpresso.de,
+            para: cartaoImpresso.para,
+            mensagem: cartaoImpresso.mensagem,
+          }
         : { ehPresente: false },
       subtotal: carrinho.subtotal,
       shippingTotal: totais.frete,
       discountTotal: totais.desconto,
       couponCode: carrinho.cupom?.codigo ?? null,
+      giftCardCode: pagoComCartao > 0 ? (carrinho.cartaoPresente?.codigo ?? null) : null,
+      giftCardTotal: pagoComCartao,
       total,
       events: [
         {
