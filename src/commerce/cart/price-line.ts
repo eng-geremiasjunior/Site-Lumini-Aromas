@@ -187,7 +187,9 @@ export function priceLine(input: PriceLineInput): PriceLineResult {
       }
     }
 
-    if (field.maxChars && value.length > field.maxChars) {
+    // O limite de caracteres é para texto. Num campo de arquivo o valor é
+    // o nome do que foi enviado, e cortar isso não faz sentido nenhum.
+    if (field.type !== 'file' && field.maxChars && value.length > field.maxChars) {
       return {
         ok: false,
         code: 'PERSONALIZATION_TOO_LONG',

@@ -21,6 +21,8 @@ export type CartLine = PricedLine & {
   categoryId: string | null
   imageUrl: string | null
   addonIds: string[]
+  /** Logo enviada pela cliente: identificador e endereço para mostrar. */
+  artFile: { id: number; url: string | null } | null
 }
 
 export type CartView = {
@@ -48,7 +50,7 @@ export async function buscarCarrinho(token: string) {
     collection: 'carts',
     where: { token: { equals: token } },
     limit: 1,
-    depth: 0,
+    depth: 1,
     overrideAccess: true,
   })
   return resultado.docs[0] ?? null
@@ -137,9 +139,15 @@ export async function montarVisao(
     // simplesmente não aparece; o cliente não é levado ao pagamento com ela.
     if (!resultado.ok) continue
 
+    const arte =
+      item.artFile && typeof item.artFile === 'object'
+        ? { id: Number(item.artFile.id), url: item.artFile.url ?? null }
+        : null
+
     lines.push({
       ...resultado.line,
       index,
+      artFile: arte,
       productSlug: produto.slug,
       categoryId: produto.categoryId,
       imageUrl: produto.images[0]?.url ?? null,
@@ -172,7 +180,7 @@ export async function montarVisao(
 export async function resumoDoCarrinho(id: number | string): Promise<CartView | null> {
   const payload = await getPayloadClient()
   const doc = await payload
-    .findByID({ collection: 'carts', id, depth: 0, overrideAccess: true })
+    .findByID({ collection: 'carts', id, depth: 1, overrideAccess: true })
     .catch(() => null)
 
   if (!doc) return null

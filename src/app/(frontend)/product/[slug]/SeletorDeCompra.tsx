@@ -5,7 +5,7 @@ import { useMemo, useState, useTransition } from 'react'
 import type { ProductView } from '../../../../commerce/catalog/get-product.ts'
 import { useRouter } from 'next/navigation'
 
-import { adicionarAoCarrinho, type ResultadoAdicao } from './actions.ts'
+import { adicionarAoCarrinho, enviarLogo, type ResultadoAdicao } from './actions.ts'
 
 function brl(cents: number): string {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -45,6 +45,9 @@ export function SeletorDeCompra({
 
   const [personalizacao, setPersonalizacao] = useState<Record<string, string>>({})
   const [acabamentos, setAcabamentos] = useState<string[]>([])
+  const [logo, setLogo] = useState<{ id: number; nome: string; url: string | null } | null>(null)
+  const [erroDoArquivo, setErroDoArquivo] = useState<string | null>(null)
+  const [enviandoArquivo, enviarArquivo] = useTransition()
   const [resultado, setResultado] = useState<ResultadoAdicao | null>(null)
   const [acaoEmCurso, setAcaoEmCurso] = useState<'carrinho' | 'agora' | null>(null)
   const [enviando, iniciarEnvio] = useTransition()
@@ -105,6 +108,7 @@ export function SeletorDeCompra({
         qty: quantidade,
         personalization: personalizacao,
         addonIds: acabamentos,
+        artFileId: logo?.id ?? null,
       })
 
       setResultado(resposta)
@@ -237,6 +241,36 @@ export function SeletorDeCompra({
                       setPersonalizacao((atual) => ({ ...atual, [campo.label]: evento.target.value }))
                     }
                     style={estiloCampo}
+                  />
+                ) : campo.type === 'file' ? (
+                  <CampoDeArquivo
+                    id={`campo-${campo.label}`}
+                    logo={logo}
+                    enviando={enviandoArquivo}
+                    erro={erroDoArquivo}
+                    aoEscolher={(arquivo) => {
+                      setErroDoArquivo(null)
+                      enviarArquivo(async () => {
+                        const dados = new FormData()
+                        dados.set('arquivo', arquivo)
+                        const resposta = await enviarLogo(dados)
+
+                        if (resposta.ok) {
+                          setLogo({ id: resposta.id, nome: resposta.nome, url: resposta.url })
+                          setPersonalizacao((atual) => ({ ...atual, [campo.label]: resposta.nome }))
+                        } else {
+                          setErroDoArquivo(resposta.mensagem)
+                        }
+                      })
+                    }}
+                    aoTirar={() => {
+                      setLogo(null)
+                      setPersonalizacao((atual) => {
+                        const copia = { ...atual }
+                        delete copia[campo.label]
+                        return copia
+                      })
+                    }}
                   />
                 ) : campo.type === 'select' ? (
                   <select
@@ -450,4 +484,92 @@ const estiloLink: React.CSSProperties = {
   cursor: 'pointer',
   textDecoration: 'underline',
   font: 'inherit',
+}
+
+/**
+ * Envio da logomarca.
+ *
+ * Sobe na hora de escolher, e não ao finalizar: assim ela vê o arquivo
+ * aceito — ou o aviso de que passou de 5 MB — enquanto ainda está pensando
+ * no produto, e não no último clique antes de pagar.
+ *
+ * Depois de enviado, mostra a miniatura. Ver a própria logo ali é o que
+ * responde "será que subiu certo?" sem ela precisar perguntar.
+ */
+function CampoDeArquivo({
+  id,
+  logo,
+  enviando,
+  erro,
+  aoEscolher,
+  aoTirar,
+}: {
+  id: string
+  logo: { id: number; nome: string; url: string | null } | null
+  enviando: boolean
+  erro: string | null
+  aoEscolher: (arquivo: File) => void
+  aoTirar: () => void
+}) {
+  if (logo) {
+    return (
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.75rem',
+          padding: '0.6rem 0.75rem',
+          border: '1px solid var(--lumini-line)',
+          borderRadius: 8,
+          background: '#fff',
+        }}
+      >
+        {logo.url && (
+          <img
+            src={logo.url}
+            alt=""
+            style={{
+              width: '2.75rem',
+              height: '2.75rem',
+              objectFit: 'contain',
+              background: 'var(--lumini-cream)',
+              borderRadius: 4,
+            }}
+          />
+        )}
+
+        <span style={{ flex: 1, fontSize: '0.92rem', overflowWrap: 'anywhere' }}>{logo.nome}</span>
+
+        <button type="button" onClick={aoTirar} style={estiloLink}>
+          trocar
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <input
+        id={id}
+        type="file"
+        accept="image/png,image/jpeg,image/webp,application/pdf"
+        disabled={enviando}
+        onChange={(evento) => {
+          const arquivo = evento.target.files?.[0]
+          if (arquivo) aoEscolher(arquivo)
+        }}
+        style={{ ...estiloCampo, padding: '0.45rem' }}
+      />
+
+      <p style={{ margin: '0.2rem 0 0', fontSize: '0.8rem', color: 'var(--lumini-ink-soft)' }}>
+        {enviando ? 'Enviando...' : 'PNG, JPG, WEBP ou PDF, até 5 MB.'}
+      </p>
+
+      {erro && (
+        <p role="alert" style={{ margin: '0.2rem 0 0', fontSize: '0.85rem', color: '#8a2a2a' }}>
+          {erro}
+        </p>
+      )}
+    </>
+  )
 }

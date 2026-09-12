@@ -979,6 +979,7 @@ export interface Cart {
           | number
           | boolean
           | null;
+        artFile?: (number | null) | Media;
         id?: string | null;
       }[]
     | null;
@@ -1752,6 +1753,7 @@ export interface CartsSelect<T extends boolean = true> {
         qty?: T;
         personalization?: T;
         addonIds?: T;
+        artFile?: T;
         id?: T;
       };
   email?: T;

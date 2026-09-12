@@ -26,6 +26,8 @@ export type CartItemInput = {
   qty: number
   personalization: Record<string, string>
   addonIds: string[]
+  /** Logo enviada pela cliente, quando o produto pede arquivo. */
+  artFileId?: number | null
 }
 
 export type { CartLine, CartView } from './cart-view.ts'
@@ -105,6 +107,7 @@ export async function addToCart(entrada: CartItemInput): Promise<CartResult> {
     qty: entrada.qty,
     personalization: entrada.personalization,
     addonIds: entrada.addonIds,
+    artFile: entrada.artFileId ?? null,
   }
 
   if (existente) {

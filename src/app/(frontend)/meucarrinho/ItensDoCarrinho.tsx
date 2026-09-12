@@ -102,23 +102,67 @@ export function ItensDoCarrinho({ linhas, faixasPorProduto }: Props) {
                   </p>
                 )}
 
-                {Object.entries(linha.personalization).length > 0 && (
-                  <dl
+                {/* A personalização é o que ela mais precisa conferir antes
+                    de pagar: o rótulo sai impresso exatamente assim, e
+                    depois de produzido não se corrige uma letra. */}
+                {(Object.entries(linha.personalization).length > 0 || linha.artFile) && (
+                  <div
                     style={{
-                      margin: '0.5rem 0 0',
-                      fontSize: '0.88rem',
-                      color: 'var(--lumini-ink-soft)',
+                      margin: '0.6rem 0 0',
+                      padding: '0.7rem 0.85rem',
+                      background: 'var(--lumini-cream)',
+                      borderRadius: 8,
                       display: 'grid',
-                      gap: '0.15rem',
+                      gap: '0.5rem',
                     }}
                   >
                     {Object.entries(linha.personalization).map(([rotulo, valor]) => (
                       <div key={rotulo}>
-                        <dt style={{ display: 'inline' }}>{rotulo}: </dt>
-                        <dd style={{ display: 'inline', margin: 0 }}>{valor}</dd>
+                        <span
+                          style={{
+                            display: 'block',
+                            fontSize: '0.72rem',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.1em',
+                            color: 'var(--lumini-ink-soft)',
+                          }}
+                        >
+                          {rotulo}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: 'var(--lumini-font-display)',
+                            fontSize: '1.05rem',
+                            overflowWrap: 'anywhere',
+                          }}
+                        >
+                          {valor}
+                        </span>
                       </div>
                     ))}
-                  </dl>
+
+                    {linha.artFile?.url && (
+                      <img
+                        src={linha.artFile.url}
+                        alt="Logo que você enviou"
+                        style={{
+                          width: '3.5rem',
+                          height: '3.5rem',
+                          objectFit: 'contain',
+                          background: '#fff',
+                          borderRadius: 6,
+                          padding: '0.25rem',
+                        }}
+                      />
+                    )}
+
+                    <a
+                      href={`/product/${linha.productSlug}/`}
+                      style={{ fontSize: '0.82rem', color: 'var(--lumini-ink-soft)' }}
+                    >
+                      Corrigir a personalização
+                    </a>
+                  </div>
                 )}
 
                 {linha.addons.length > 0 && (

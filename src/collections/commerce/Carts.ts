@@ -80,6 +80,12 @@ export const Carts: CollectionConfig = {
           type: 'json',
           label: 'Acabamentos escolhidos',
         },
+        {
+          name: 'artFile',
+          type: 'upload',
+          relationTo: 'media',
+          label: 'Logo enviada pelo cliente',
+        },
       ],
     },
     {
