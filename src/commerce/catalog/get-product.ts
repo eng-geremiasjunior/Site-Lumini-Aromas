@@ -2,6 +2,7 @@ import { getPayloadClient } from '../../lib/payload.ts'
 import { buildLotTable, type LotTableRow } from '../pricing/lot-pricing.ts'
 import { toPricingConfig, type PricingProduct } from '../cart/price-line.ts'
 import { estimateDelivery, formatIsoDate, type ProductionRule } from '../shipping/business-days.ts'
+import { ofertaId } from '../feeds/oferta-id.ts'
 
 /** Tudo que a página de produto precisa, já pronto para exibir. */
 export type ProductView = {
@@ -20,6 +21,14 @@ export type ProductView = {
     imageUrl: string | null
     /** A experiência olfativa, para a seção de aromas. */
     descricao: string | null
+    /**
+     * O identificador desta oferta no Google e na Meta.
+     *
+     * É o mesmo que vai no feed. Sem isso igual dos dois lados, o anúncio
+     * de remarketing não encontra o produto no catálogo e mostra algo
+     * genérico no lugar da vela que a pessoa olhou.
+     */
+    idDeAnuncio: string
   }>
   /** Os blocos que fazem a página vender sozinha. Cada um pode estar vazio. */
   pagina: PaginaDeVenda
@@ -140,6 +149,13 @@ export async function getProductBySlug(slug: string): Promise<ProductView | null
         sku: v.sku ?? null,
         imageUrl: toImage(v.image)?.url ?? null,
         descricao: v.descricao ?? null,
+        idDeAnuncio: ofertaId({
+          produtoId: doc.id,
+          loteMinimo: pricing.minQty ?? 20,
+          sku: v.sku,
+          legacyWooVariationId: v.legacyWooVariationId,
+          preservarIdAntigo: doc.preserveLegacyFeedId,
+        }),
       })),
     pagina: montarPagina(doc),
     lotTable,

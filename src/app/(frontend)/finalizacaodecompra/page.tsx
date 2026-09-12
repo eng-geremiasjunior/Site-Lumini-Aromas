@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 
 import { getCart } from '../../../commerce/cart/cart-service.ts'
+import { ofertaId } from '../../../commerce/feeds/oferta-id.ts'
 import { Checkout } from './Checkout.tsx'
+import { Evento } from '../rastreamento/Evento.tsx'
 
 export const metadata: Metadata = {
   title: 'Finalização de compra',
@@ -20,6 +22,27 @@ export default async function CheckoutPage() {
 
   return (
     <main style={{ maxWidth: '68rem', margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
+      {/* Quem chega até aqui e não termina é o público de remarketing mais
+          valioso que a loja tem. */}
+      <Evento
+        nome="begin_checkout"
+        dados={{
+          itens: carrinho.lines.map((linha) => ({
+            id: ofertaId({
+              produtoId: linha.productId,
+              loteMinimo: linha.qty,
+              sku: linha.sku,
+            }),
+            nome: linha.productName,
+            precoEmCentavos: linha.total,
+            quantidade: 1,
+            variacao: linha.variantLabel,
+          })),
+          valorEmCentavos: carrinho.subtotal - carrinho.desconto,
+          cupom: carrinho.cupom?.codigo ?? null,
+        }}
+      />
+
       <h1 style={{ fontSize: 'clamp(1.8rem, 4vw, 2.4rem)', marginBottom: '0.3rem' }}>
         Finalização de compra
       </h1>

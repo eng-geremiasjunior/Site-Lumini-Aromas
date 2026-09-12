@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import type React from 'react'
 
 import './globals.css'
+import { AvisoDeCookies } from './rastreamento/AvisoDeCookies.tsx'
+import { GoogleTag } from './rastreamento/GoogleTag.tsx'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL ?? 'https://luminiaromas.com.br'),
@@ -26,7 +28,14 @@ export const metadata: Metadata = {
 export default function FrontendLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
-      <body>{children}</body>
+      <head>
+        {/* Antes de tudo, para o consentimento valer já no primeiro evento. */}
+        <GoogleTag />
+      </head>
+      <body>
+        {children}
+        <AvisoDeCookies />
+      </body>
     </html>
   )
 }

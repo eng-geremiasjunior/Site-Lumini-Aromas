@@ -6,6 +6,7 @@ import { provaSocialDoProduto } from '../../../../commerce/catalog/get-prova-soc
 import { SeletorDeCompra } from './SeletorDeCompra.tsx'
 import { SecoesDaPagina } from './SecoesDaPagina.tsx'
 import { ocasioesDoProduto } from '../../../../commerce/catalog/get-ocasiao.ts'
+import { Evento } from '../../rastreamento/Evento.tsx'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -55,8 +56,27 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const mostrarFoto = (modoDaProva === 'ambas' || modoDaProva === '1') && prova.foto !== null
   const mostrarFrase = (modoDaProva === 'ambas' || modoDaProva === '2') && prova.frase !== null
 
+  // O aroma que a pessoa está vendo é o que vai para o Google: é ele que
+  // o anúncio de remarketing precisa mostrar depois.
+  const varianteVista = produto.variants.find((v) => v.key === aroma) ?? produto.variants[0] ?? null
+
   return (
     <main style={{ maxWidth: '68rem', margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
+      <Evento
+        nome="view_item"
+        dados={{
+          itens: [
+            {
+              id: varianteVista?.idDeAnuncio ?? produto.id + '-' + produto.minQty,
+              nome: produto.name,
+              precoEmCentavos: menorLote?.lotPrice ?? 0,
+              quantidade: 1,
+              variacao: varianteVista?.label ?? null,
+            },
+          ],
+        }}
+      />
+
       <nav style={{ fontSize: '0.85rem', color: 'var(--lumini-ink-soft)', marginBottom: '2rem' }}>
         <a href="/">Início</a> <span aria-hidden="true">›</span> {produto.name}
       </nav>

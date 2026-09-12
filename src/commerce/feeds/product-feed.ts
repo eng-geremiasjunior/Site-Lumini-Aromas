@@ -17,6 +17,7 @@
 import { formatFeedPrice, lotPrice, type LotPricingConfig } from '../pricing/lot-pricing.ts'
 import { productionDaysFor, type ProductionRule } from '../shipping/business-days.ts'
 import { toPricingConfig, type PricingProduct } from '../cart/price-line.ts'
+import { ofertaId } from './oferta-id.ts'
 
 export type FeedChannel = 'google' | 'meta'
 
@@ -110,10 +111,15 @@ export function buildFeedItems(product: FeedProduct, settings: FeedSettings): Fe
 
   return rows.map((variant) => {
     const suffix = variant?.label ? ` ${variant.label}` : ''
-    const legacyId = product.preserveLegacyFeedId ? variant?.legacyWooVariationId : null
 
     return {
-      id: legacyId ? String(legacyId) : (variant?.sku ?? `${groupId}-${minQty}`),
+      id: ofertaId({
+        produtoId: groupId,
+        loteMinimo: minQty,
+        sku: variant?.sku,
+        legacyWooVariationId: variant?.legacyWooVariationId,
+        preservarIdAntigo: product.preserveLegacyFeedId,
+      }),
       itemGroupId: groupId,
       title: truncate(`${product.name}${suffix} - lote ${minQty} peças`, 150),
       description: truncate(

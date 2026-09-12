@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 
 import { getPayloadClient } from '../../../lib/payload.ts'
 import { ORDER_STATUSES, type OrderStatus } from '../../../commerce/orders/statuses.ts'
+import { ofertaId } from '../../../commerce/feeds/oferta-id.ts'
+import { dadosDoComprador } from '../../../commerce/marketing/google-tag.ts'
+import { Evento } from '../rastreamento/Evento.tsx'
 
 export const metadata: Metadata = {
   title: 'Pedido recebido',
@@ -44,6 +47,45 @@ export default async function PedidoRecebidoPage({ searchParams }: Props) {
 
       {pedido ? (
         <>
+          {/*
+            A compra contada uma vez só, com o número do pedido como chave.
+            Os dados do comprador vão junto para a conversão aprimorada: o
+            gtag aplica o hash no navegador, nada sai em texto aberto, e é
+            o que permite o Google reconhecer a venda quando o cookie não
+            sobreviveu — a maioria dos casos no iPhone.
+          */}
+          <Evento
+            nome="purchase"
+            dados={{
+              itens: (pedido.items ?? []).map((item) => ({
+                id: ofertaId({
+                  produtoId:
+                    typeof item.product === 'object' && item.product
+                      ? item.product.id
+                      : (item.product ?? ''),
+                  loteMinimo: item.qty ?? 0,
+                  sku: item.sku,
+                }),
+                nome: item.productName ?? '',
+                precoEmCentavos: item.lineTotal ?? item.lotPrice ?? 0,
+                quantidade: 1,
+                variacao: item.variantLabel ?? null,
+              })),
+              valorEmCentavos: pedido.total ?? 0,
+              freteEmCentavos: pedido.shippingTotal ?? null,
+              cupom: pedido.couponCode ?? null,
+              idDoPedido: String(pedido.number),
+            }}
+            comprador={dadosDoComprador({
+              email: pedido.email,
+              telefone: pedido.phone,
+              nome: pedido.customerName,
+              cidade: pedido.shippingAddress?.city,
+              uf: pedido.shippingAddress?.state,
+              cep: pedido.shippingAddress?.postalCode,
+            })}
+          />
+
           <p style={{ color: 'var(--lumini-ink-soft)' }}>
             Seu pedido <strong>número {pedido.number}</strong> foi registrado. Enviamos a
             confirmação para {pedido.email}.

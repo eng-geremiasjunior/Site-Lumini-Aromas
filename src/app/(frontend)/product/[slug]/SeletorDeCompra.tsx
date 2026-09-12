@@ -6,6 +6,7 @@ import type { ProductView } from '../../../../commerce/catalog/get-product.ts'
 import { useRouter } from 'next/navigation'
 
 import { adicionarAoCarrinho, enviarLogo, type ResultadoAdicao } from './actions.ts'
+import { dispararEvento } from '../../rastreamento/disparar.ts'
 
 function brl(cents: number): string {
   return (cents / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -113,6 +114,25 @@ export function SeletorDeCompra({
 
       setResultado(resposta)
       setAcaoEmCurso(null)
+
+      // Só conta depois de o servidor aceitar. Quantidade fora da faixa é
+      // recusada aqui, e um evento de carrinho para uma compra que não
+      // existiu envenena o público de remarketing.
+      if (resposta.ok) {
+        const variante = produto.variants.find((v) => v.key === aroma)
+
+        dispararEvento('add_to_cart', {
+          itens: [
+            {
+              id: variante?.idDeAnuncio ?? produto.id + '-' + quantidade,
+              nome: produto.name,
+              precoEmCentavos: total,
+              quantidade: 1,
+              variacao: variante?.label ?? null,
+            },
+          ],
+        })
+      }
 
       if (resposta.ok && levarParaOCarrinho) router.push('/meucarrinho/')
     })
