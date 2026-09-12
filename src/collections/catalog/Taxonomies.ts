@@ -87,6 +87,49 @@ export const Occasions: CollectionConfig = {
       },
     },
     {
+      name: 'eventType',
+      type: 'select',
+      label: 'Corresponde ao tipo de evento',
+      options: [
+        { label: 'Casamento', value: 'Casamento' },
+        { label: 'Bodas', value: 'Bodas' },
+        { label: '15 anos', value: '15 anos' },
+        { label: 'Batizado', value: 'Batizado' },
+        { label: 'Maternidade', value: 'Maternidade' },
+        { label: 'Aniversário', value: 'Aniversário' },
+        { label: 'Corporativo', value: 'Corporativo' },
+      ],
+      admin: {
+        description:
+          'Liga esta página aos eventos já realizados deste tipo. É o que faz as fotos de clientes aparecerem aqui sozinhas, sem você cadastrar duas vezes.',
+      },
+    },
+    {
+      name: 'galeria',
+      type: 'upload',
+      relationTo: 'media',
+      hasMany: true,
+      label: 'Inspirações',
+      admin: {
+        description:
+          'Fotos de composições deste tipo de evento. É o que a cliente veio ver quando ainda não sabe o que quer.',
+      },
+    },
+    {
+      name: 'faq',
+      type: 'array',
+      label: 'Perguntas frequentes',
+      labels: { singular: 'Pergunta', plural: 'Perguntas' },
+      admin: {
+        description:
+          'Cada pergunta respondida aqui é uma que deixa de chegar no seu WhatsApp. Ex.: quantidade mínima, prazo, como funciona a personalização.',
+      },
+      fields: [
+        { name: 'pergunta', type: 'text', label: 'Pergunta', required: true },
+        { name: 'resposta', type: 'textarea', label: 'Resposta', required: true },
+      ],
+    },
+    {
       name: 'sortOrder',
       type: 'number',
       label: 'Ordem',

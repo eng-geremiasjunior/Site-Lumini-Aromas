@@ -13,7 +13,16 @@ export type ProductView = {
   shortDescription: string | null
   description: unknown
   images: Array<{ url: string; alt: string; width?: number | null; height?: number | null }>
-  variants: Array<{ key: string; label: string; sku: string | null; imageUrl: string | null }>
+  variants: Array<{
+    key: string
+    label: string
+    sku: string | null
+    imageUrl: string | null
+    /** A experiência olfativa, para a seção de aromas. */
+    descricao: string | null
+  }>
+  /** Os blocos que fazem a página vender sozinha. Cada um pode estar vazio. */
+  pagina: PaginaDeVenda
   lotTable: LotTableRow[]
   minQty: number
   maxQty: number
@@ -130,7 +139,9 @@ export async function getProductBySlug(slug: string): Promise<ProductView | null
         label: v.label ?? (v.key as string),
         sku: v.sku ?? null,
         imageUrl: toImage(v.image)?.url ?? null,
+        descricao: v.descricao ?? null,
       })),
+    pagina: montarPagina(doc),
     lotTable,
     minQty: pricing.minQty ?? 20,
     maxQty: pricing.maxQty ?? 200,
@@ -225,4 +236,107 @@ function idDoRelacionamento(valor: unknown): string | null {
     return doc.id === undefined ? null : String(doc.id)
   }
   return String(valor)
+}
+
+/**
+ * Os blocos da página de venda.
+ *
+ * Tudo aqui é opcional por desenho. A tela decide o que mostrar pelo que
+ * veio preenchido, e nunca abre uma seção vazia: página de luxo com
+ * "em breve" escrito nela é pior do que página curta.
+ */
+export type PaginaDeVenda = {
+  promessa: { titulo: string | null; texto: string | null; imagens: ImagemDoProduto[] } | null
+  acabamento: Array<{
+    titulo: string
+    texto: string
+    detalhe: string | null
+    imagem: ImagemDoProduto | null
+  }>
+  secaoAromas: { titulo: string | null; texto: string | null } | null
+  secaoPersonalizacao: {
+    titulo: string | null
+    texto: string | null
+    exemplos: ImagemDoProduto[]
+  } | null
+  comoFunciona: Array<{ titulo: string; texto: string | null }>
+  faq: Array<{ pergunta: string; resposta: string }>
+}
+
+type ImagemDoProduto = { url: string; alt: string; width?: number | null; height?: number | null }
+
+type DocumentoDoProduto = {
+  promessa?: { titulo?: string | null; texto?: string | null; imagens?: unknown } | null
+  acabamento?: Array<{
+    titulo?: string | null
+    texto?: string | null
+    detalhe?: string | null
+    imagem?: unknown
+  }> | null
+  secaoAromas?: { titulo?: string | null; texto?: string | null } | null
+  secaoPersonalizacao?: { titulo?: string | null; texto?: string | null; exemplos?: unknown } | null
+  comoFunciona?: Array<{ titulo?: string | null; texto?: string | null }> | null
+  faq?: Array<{ pergunta?: string | null; resposta?: string | null }> | null
+}
+
+function montarPagina(doc: DocumentoDoProduto): PaginaDeVenda {
+  const promessa = doc.promessa
+  const personalizacao = doc.secaoPersonalizacao
+  const aromas = doc.secaoAromas
+
+  return {
+    promessa: temAlgo(promessa?.titulo, promessa?.texto, promessa?.imagens)
+      ? {
+          titulo: promessa?.titulo ?? null,
+          texto: promessa?.texto ?? null,
+          imagens: listaDeImagens(promessa?.imagens),
+        }
+      : null,
+
+    acabamento: (doc.acabamento ?? [])
+      .filter((bloco) => bloco.titulo && bloco.texto)
+      .map((bloco) => ({
+        titulo: bloco.titulo as string,
+        texto: bloco.texto as string,
+        detalhe: bloco.detalhe ?? null,
+        imagem: toImage(bloco.imagem),
+      })),
+
+    secaoAromas: temAlgo(aromas?.titulo, aromas?.texto)
+      ? { titulo: aromas?.titulo ?? null, texto: aromas?.texto ?? null }
+      : null,
+
+    secaoPersonalizacao: temAlgo(
+      personalizacao?.titulo,
+      personalizacao?.texto,
+      personalizacao?.exemplos,
+    )
+      ? {
+          titulo: personalizacao?.titulo ?? null,
+          texto: personalizacao?.texto ?? null,
+          exemplos: listaDeImagens(personalizacao?.exemplos),
+        }
+      : null,
+
+    comoFunciona: (doc.comoFunciona ?? [])
+      .filter((passo) => passo.titulo)
+      .map((passo) => ({ titulo: passo.titulo as string, texto: passo.texto ?? null })),
+
+    faq: (doc.faq ?? [])
+      .filter((item) => item.pergunta && item.resposta)
+      .map((item) => ({ pergunta: item.pergunta as string, resposta: item.resposta as string })),
+  }
+}
+
+/** Um bloco só existe quando tem texto ou foto. Nem título sozinho basta. */
+function temAlgo(...valores: unknown[]): boolean {
+  return valores.some((valor) => {
+    if (Array.isArray(valor)) return valor.length > 0
+    return typeof valor === 'string' ? valor.trim() !== '' : Boolean(valor)
+  })
+}
+
+function listaDeImagens(valor: unknown): ImagemDoProduto[] {
+  if (!Array.isArray(valor)) return []
+  return valor.map(toImage).filter((imagem): imagem is ImagemDoProduto => imagem !== null)
 }

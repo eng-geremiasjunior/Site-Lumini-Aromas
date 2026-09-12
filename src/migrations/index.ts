@@ -12,6 +12,8 @@ import * as migration_20260912_132549_presente from './20260912_132549_presente'
 import * as migration_20260912_153854_cartao_presente from './20260912_153854_cartao_presente';
 import * as migration_20260912_155235_cartao_no_pedido from './20260912_155235_cartao_no_pedido';
 import * as migration_20260912_173547_logo_no_carrinho from './20260912_173547_logo_no_carrinho';
+import * as migration_20260912_174717_ocasioes from './20260912_174717_ocasioes';
+import * as migration_20260912_175534_pagina_de_venda from './20260912_175534_pagina_de_venda';
 
 export const migrations = [
   {
@@ -82,6 +84,16 @@ export const migrations = [
   {
     up: migration_20260912_173547_logo_no_carrinho.up,
     down: migration_20260912_173547_logo_no_carrinho.down,
-    name: '20260912_173547_logo_no_carrinho'
+    name: '20260912_173547_logo_no_carrinho',
+  },
+  {
+    up: migration_20260912_174717_ocasioes.up,
+    down: migration_20260912_174717_ocasioes.down,
+    name: '20260912_174717_ocasioes',
+  },
+  {
+    up: migration_20260912_175534_pagina_de_venda.up,
+    down: migration_20260912_175534_pagina_de_venda.down,
+    name: '20260912_175534_pagina_de_venda'
   },
 ];

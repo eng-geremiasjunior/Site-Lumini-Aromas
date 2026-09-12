@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { getProductBySlug } from '../../../../commerce/catalog/get-product.ts'
 import { provaSocialDoProduto } from '../../../../commerce/catalog/get-prova-social.ts'
 import { SeletorDeCompra } from './SeletorDeCompra.tsx'
+import { SecoesDaPagina } from './SecoesDaPagina.tsx'
+import { ocasioesDoProduto } from '../../../../commerce/catalog/get-ocasiao.ts'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -48,6 +50,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
   // lado, no produto de verdade: ?prova=1, ?prova=2, ?prova=nenhuma.
   // Quando a decisão estiver tomada, sai daqui e fica só a escolhida.
   const prova = await provaSocialDoProduto(produto.id)
+  const ocasioes = await ocasioesDoProduto(produto.id)
   const modoDaProva = typeof busca.prova === 'string' ? busca.prova : 'ambas'
   const mostrarFoto = (modoDaProva === 'ambas' || modoDaProva === '1') && prova.foto !== null
   const mostrarFrase = (modoDaProva === 'ambas' || modoDaProva === '2') && prova.frase !== null
@@ -166,6 +169,10 @@ export default async function ProductPage({ params, searchParams }: Props) {
           />
         </div>
       </div>
+
+      {/* As seções que fazem a página vender sozinha. Cada uma aparece só
+          quando tem conteúdo cadastrado. */}
+      <SecoesDaPagina produto={produto} ocasioes={ocasioes} />
 
       {/* ------------------------------------------------- tabela de preços */}
       <section style={{ marginTop: '4rem' }}>

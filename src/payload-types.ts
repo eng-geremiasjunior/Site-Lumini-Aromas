@@ -223,6 +223,73 @@ export interface Product {
   occasions?: (number | Occasion)[] | null;
   tags?: (number | Tag)[] | null;
   /**
+   * O porquê emocional, logo abaixo da compra. É o que separa "vela de 45 g" de "a lembrança que os convidados levam para casa".
+   */
+  promessa?: {
+    /**
+     * Ex.: O detalhe que transforma uma celebração em memória.
+     */
+    titulo?: string | null;
+    texto?: string | null;
+    imagens?: (number | Media)[] | null;
+  };
+  /**
+   * A vela, a personalização, a apresentação. Informação concreta com foto — luxo se sustenta em fato, não em adjetivo. Não escreva o que o produto não tem.
+   */
+  acabamento?:
+    | {
+        titulo: string;
+        texto: string;
+        /**
+         * Ex.: 45 g · 7 cm de altura · vidro com tampa.
+         */
+        detalhe?: string | null;
+        imagem?: (number | null) | Media;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * A descrição de cada aroma fica na aba Opções, em cada variação. Aqui entra só a abertura da seção.
+   */
+  secaoAromas?: {
+    /**
+     * Ex.: Um aroma para cada história.
+     */
+    titulo?: string | null;
+    texto?: string | null;
+  };
+  /**
+   * Mostre composições reais já entregues. É onde ela entende que a peça vai ter a cara do evento dela.
+   */
+  secaoPersonalizacao?: {
+    /**
+     * Ex.: Seu evento tem uma identidade. Sua lembrança também.
+     */
+    titulo?: string | null;
+    texto?: string | null;
+    exemplos?: (number | Media)[] | null;
+  };
+  /**
+   * Da ideia à lembrança pronta. Esta seção reduz dúvida e, na prática, reduz pergunta repetida no WhatsApp. Se ficar vazia, a loja usa os passos gerais das Configurações.
+   */
+  comoFunciona?:
+    | {
+        titulo: string;
+        texto?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Quantidade mínima, prazo, escolha de aroma, envio. Cada resposta aqui é uma pergunta a menos no seu WhatsApp. Vazio aqui usa as perguntas gerais das Configurações.
+   */
+  faq?:
+    | {
+        pergunta: string;
+        resposta: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
    * Ex.: Aroma, com os valores que este produto oferece. Cada combinação vira uma variação, sem preço próprio.
    */
   optionGroups?:
@@ -251,6 +318,10 @@ export interface Product {
          * Opcional. Se vazio, usa a primeira foto do produto.
          */
         image?: (number | null) | Media;
+        /**
+         * A experiência olfativa, não o nome. "Cítrico, leve, desperta" diz mais do que "Capim Limão" — e é o que diferencia a loja de uma lista fria de fragrâncias.
+         */
+        descricao?: string | null;
         key?: string | null;
         termIds?: string | null;
         /**
@@ -496,6 +567,24 @@ export interface Occasion {
    * Ex.: "60 a 200 peças". Aparece como orientação de quantidade para este tipo de evento.
    */
   suggestedLots?: string | null;
+  /**
+   * Liga esta página aos eventos já realizados deste tipo. É o que faz as fotos de clientes aparecerem aqui sozinhas, sem você cadastrar duas vezes.
+   */
+  eventType?: ('Casamento' | 'Bodas' | '15 anos' | 'Batizado' | 'Maternidade' | 'Aniversário' | 'Corporativo') | null;
+  /**
+   * Fotos de composições deste tipo de evento. É o que a cliente veio ver quando ainda não sabe o que quer.
+   */
+  galeria?: (number | Media)[] | null;
+  /**
+   * Cada pergunta respondida aqui é uma que deixa de chegar no seu WhatsApp. Ex.: quantidade mínima, prazo, como funciona a personalização.
+   */
+  faq?:
+    | {
+        pergunta: string;
+        resposta: string;
+        id?: string | null;
+      }[]
+    | null;
   sortOrder?: number | null;
   updatedAt: string;
   createdAt: string;
@@ -1377,6 +1466,49 @@ export interface ProductsSelect<T extends boolean = true> {
   category?: T;
   occasions?: T;
   tags?: T;
+  promessa?:
+    | T
+    | {
+        titulo?: T;
+        texto?: T;
+        imagens?: T;
+      };
+  acabamento?:
+    | T
+    | {
+        titulo?: T;
+        texto?: T;
+        detalhe?: T;
+        imagem?: T;
+        id?: T;
+      };
+  secaoAromas?:
+    | T
+    | {
+        titulo?: T;
+        texto?: T;
+      };
+  secaoPersonalizacao?:
+    | T
+    | {
+        titulo?: T;
+        texto?: T;
+        exemplos?: T;
+      };
+  comoFunciona?:
+    | T
+    | {
+        titulo?: T;
+        texto?: T;
+        id?: T;
+      };
+  faq?:
+    | T
+    | {
+        pergunta?: T;
+        resposta?: T;
+        id?: T;
+      };
   optionGroups?:
     | T
     | {
@@ -1392,6 +1524,7 @@ export interface ProductsSelect<T extends boolean = true> {
         sku?: T;
         active?: T;
         image?: T;
+        descricao?: T;
         key?: T;
         termIds?: T;
         legacyWooVariationId?: T;
@@ -1494,6 +1627,15 @@ export interface OccasionsSelect<T extends boolean = true> {
   description?: T;
   heroImage?: T;
   suggestedLots?: T;
+  eventType?: T;
+  galeria?: T;
+  faq?:
+    | T
+    | {
+        pergunta?: T;
+        resposta?: T;
+        id?: T;
+      };
   sortOrder?: T;
   updatedAt?: T;
   createdAt?: T;

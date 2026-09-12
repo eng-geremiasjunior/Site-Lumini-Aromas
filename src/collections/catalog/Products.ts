@@ -2,6 +2,7 @@ import type { CollectionConfig } from 'payload'
 
 import { admins, publishedOrStaff } from '../../access/roles.ts'
 import { money } from '../../fields/money.ts'
+import { paginaDeVenda } from '../../fields/pagina-de-venda.ts'
 import { slugField } from '../../fields/slug.ts'
 import {
   DEFAULT_LOT_SIZES,
@@ -188,6 +189,8 @@ export const Products: CollectionConfig = {
         },
 
         // ----------------------------------------------------------- Opções
+        paginaDeVenda(),
+
         {
           label: 'Opções',
           description: 'Aromas e outras variações oferecidas neste produto.',
@@ -278,6 +281,15 @@ export const Products: CollectionConfig = {
                   relationTo: 'media',
                   label: 'Foto desta variação',
                   admin: { description: 'Opcional. Se vazio, usa a primeira foto do produto.' },
+                },
+                {
+                  name: 'descricao',
+                  type: 'textarea',
+                  label: 'Como este aroma é',
+                  admin: {
+                    description:
+                      'A experiência olfativa, não o nome. "Cítrico, leve, desperta" diz mais do que "Capim Limão" — e é o que diferencia a loja de uma lista fria de fragrâncias.',
+                  },
                 },
                 {
                   name: 'key',
