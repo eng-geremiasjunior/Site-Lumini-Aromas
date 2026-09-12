@@ -7,6 +7,7 @@ import * as migration_20260911_230255_caixa_de_saida from './20260911_230255_cai
 import * as migration_20260911_233030_cupons from './20260911_233030_cupons';
 import * as migration_20260911_235830_carrinho_abandonado from './20260911_235830_carrinho_abandonado';
 import * as migration_20260912_043707_comprovante from './20260912_043707_comprovante';
+import * as migration_20260912_051512_eventos from './20260912_051512_eventos';
 
 export const migrations = [
   {
@@ -52,6 +53,11 @@ export const migrations = [
   {
     up: migration_20260912_043707_comprovante.up,
     down: migration_20260912_043707_comprovante.down,
-    name: '20260912_043707_comprovante'
+    name: '20260912_043707_comprovante',
+  },
+  {
+    up: migration_20260912_051512_eventos.up,
+    down: migration_20260912_051512_eventos.down,
+    name: '20260912_051512_eventos'
   },
 ];

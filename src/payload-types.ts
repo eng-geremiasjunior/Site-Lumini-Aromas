@@ -75,6 +75,7 @@ export interface Config {
     'attribute-terms': AttributeTerm;
     addons: Addon;
     tags: Tag;
+    events: Event;
     media: Media;
     orders: Order;
     carts: Cart;
@@ -96,6 +97,7 @@ export interface Config {
     'attribute-terms': AttributeTermsSelect<false> | AttributeTermsSelect<true>;
     addons: AddonsSelect<false> | AddonsSelect<true>;
     tags: TagsSelect<false> | TagsSelect<true>;
+    events: EventsSelect<false> | EventsSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     orders: OrdersSelect<false> | OrdersSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
@@ -593,6 +595,50 @@ export interface Addon {
    */
   flatPrice?: number | null;
   active?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Eventos de clientes, usados como prova social na página do produto.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events".
+ */
+export interface Event {
+  id: number;
+  /**
+   * Só para você encontrar depois. Ex.: "Casamento Marina e Téo".
+   */
+  titulo: string;
+  /**
+   * Sem isto marcado, nada deste evento aparece no site. Foto de festa de cliente é dado pessoal: publicar sem autorização é problema, não é marketing.
+   */
+  autorizado?: boolean | null;
+  tipo: 'Casamento' | 'Bodas' | '15 anos' | 'Batizado' | 'Maternidade' | 'Aniversário' | 'Corporativo';
+  /**
+   * Ex.: Juiz de Fora. Sem o estado.
+   */
+  cidade?: string | null;
+  /**
+   * Só o mês aparece no site.
+   */
+  quando?: string | null;
+  /**
+   * A prova aparece na página destes produtos, e só deles.
+   */
+  produtos?: (number | Product)[] | null;
+  /**
+   * A primeira é a que entra na galeria do produto. Escolha a melhor: uma foto ruim ao lado das suas fotos de estúdio subtrai em vez de somar.
+   */
+  fotos?: (number | Media)[] | null;
+  /**
+   * Guardado só para o seu controle. O site mostra tipo, cidade e mês — nunca o nome.
+   */
+  nomeDaCliente?: string | null;
+  /**
+   * Guardado para uso futuro. Ainda não aparece na página do produto.
+   */
+  depoimento?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1127,6 +1173,10 @@ export interface PayloadLockedDocument {
         value: number | Tag;
       } | null)
     | ({
+        relationTo: 'events';
+        value: number | Event;
+      } | null)
+    | ({
         relationTo: 'media';
         value: number | Media;
       } | null)
@@ -1392,6 +1442,23 @@ export interface AddonsSelect<T extends boolean = true> {
 export interface TagsSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "events_select".
+ */
+export interface EventsSelect<T extends boolean = true> {
+  titulo?: T;
+  autorizado?: T;
+  tipo?: T;
+  cidade?: T;
+  quando?: T;
+  produtos?: T;
+  fotos?: T;
+  nomeDaCliente?: T;
+  depoimento?: T;
   updatedAt?: T;
   createdAt?: T;
 }

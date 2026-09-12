@@ -12,6 +12,7 @@ import { Media } from './collections/Media.ts'
 import { Users } from './collections/Users.ts'
 import { Addons } from './collections/catalog/Addons.ts'
 import { Attributes, AttributeTerms } from './collections/catalog/Attributes.ts'
+import { Events } from './collections/catalog/Events.ts'
 import { Products } from './collections/catalog/Products.ts'
 import { Categories, Occasions, Tags } from './collections/catalog/Taxonomies.ts'
 import { Carts } from './collections/commerce/Carts.ts'
@@ -84,6 +85,7 @@ export default buildConfig({
     AttributeTerms,
     Addons,
     Tags,
+    Events,
     Media,
     // Vendas
     Orders,

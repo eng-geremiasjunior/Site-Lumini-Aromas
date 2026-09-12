@@ -14,6 +14,7 @@ import { getPayload } from 'payload'
 import config from '../src/payload.config.ts'
 
 const NUMERO = '9999'
+const EVENTO = 'Casamento de demonstração'
 const CUPOM = 'DEMO10'
 
 const payload = await getPayload({ config })
@@ -36,6 +37,14 @@ const cupons = await payload.find({
 if (limpar) {
   if (pedidos.docs[0]) await payload.delete({ collection: 'orders', id: pedidos.docs[0].id })
   if (cupons.docs[0]) await payload.delete({ collection: 'coupons', id: cupons.docs[0].id })
+
+  const { docs: eventos } = await payload.find({
+    collection: 'events',
+    where: { titulo: { equals: EVENTO } },
+    limit: 1,
+    depth: 0,
+  })
+  for (const evento of eventos) await payload.delete({ collection: 'events', id: evento.id })
 
   const { docs: envios } = await payload.find({
     collection: 'integration-events',
@@ -70,7 +79,43 @@ if (!cupons.docs[0]) {
 const { docs: midias } = await payload.find({ collection: 'media', limit: 1, depth: 0 })
 const arte = midias[0]?.id ?? null
 
+// O produto precisa estar ligado ao item: é por essa ligação que a página
+// acha a última venda para montar a frase da prova social.
+const { docs: produtosPublicados } = await payload.find({
+  collection: 'products',
+  where: { _status: { equals: 'published' } },
+  limit: 1,
+  depth: 0,
+})
+const produto = produtosPublicados[0]
+
 const daquiATrintaDias = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+const mesPassado = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
+if (produto) {
+  const { docs: jaExiste } = await payload.find({
+    collection: 'events',
+    where: { titulo: { equals: EVENTO } },
+    limit: 1,
+    depth: 0,
+  })
+
+  if (!jaExiste[0]) {
+    await payload.create({
+      collection: 'events',
+      data: {
+        titulo: EVENTO,
+        autorizado: true,
+        tipo: 'Casamento',
+        cidade: 'Juiz de Fora',
+        quando: mesPassado,
+        produtos: [produto.id],
+        fotos: arte ? [arte] : [],
+        nomeDaCliente: 'Marina (demonstração)',
+      },
+    })
+  }
+}
 const dadosDoPedido = {
   number: NUMERO,
   status: 'art_approval',
@@ -81,7 +126,8 @@ const dadosDoPedido = {
   personType: 'PF',
   items: [
     {
-      productName: 'Bomboniere',
+      product: produto?.id ?? null,
+      productName: produto?.name ?? 'Bomboniere',
       variantLabel: 'Lavanda',
       sku: 'BOM-LAV',
       qty: 60,

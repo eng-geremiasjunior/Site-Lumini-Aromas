@@ -17,6 +17,11 @@ type Props = {
   /** Aroma e quantidade vindos da URL, usados pelos anúncios do Google e da Meta. */
   aromaInicial?: string | null
   quantidadeInicial?: number | null
+  /**
+   * A linha de prova social, já montada no servidor. Fica logo acima da
+   * quantidade, que é onde a dúvida "essa loja entrega mesmo?" aparece.
+   */
+  provaDaUltimaVenda?: string | null
 }
 
 export function SeletorDeCompra({
@@ -24,6 +29,7 @@ export function SeletorDeCompra({
   whatsappNumber,
   aromaInicial,
   quantidadeInicial,
+  provaDaUltimaVenda,
 }: Props) {
   const [aroma, setAroma] = useState<string | null>(
     aromaInicial && produto.variants.some((v) => v.key === aromaInicial)
@@ -40,6 +46,7 @@ export function SeletorDeCompra({
   const [personalizacao, setPersonalizacao] = useState<Record<string, string>>({})
   const [acabamentos, setAcabamentos] = useState<string[]>([])
   const [resultado, setResultado] = useState<ResultadoAdicao | null>(null)
+  const [acaoEmCurso, setAcaoEmCurso] = useState<'carrinho' | 'agora' | null>(null)
   const [enviando, iniciarEnvio] = useTransition()
   const router = useRouter()
 
@@ -79,8 +86,18 @@ export function SeletorDeCompra({
     return linhas.join('\n')
   }, [produto, aroma, quantidade, linhaAtual])
 
-  function enviar() {
+  /**
+   * Dois caminhos, e a diferença entre eles é a intenção de quem clica.
+   *
+   * Quem está montando o evento ainda vai olhar outros modelos: tirar essa
+   * pessoa da vitrine no meio da escolha é perder a segunda peça. Quem já
+   * decidiu não deve passar por etapa nenhuma a mais — cada tela entre a
+   * decisão e o pagamento é uma chance de desistir.
+   */
+  function enviar(levarParaOCarrinho: boolean) {
     setResultado(null)
+    setAcaoEmCurso(levarParaOCarrinho ? 'agora' : 'carrinho')
+
     iniciarEnvio(async () => {
       const resposta = await adicionarAoCarrinho({
         slug: produto.slug,
@@ -89,9 +106,11 @@ export function SeletorDeCompra({
         personalization: personalizacao,
         addonIds: acabamentos,
       })
+
       setResultado(resposta)
-      // Deu certo: leva para o carrinho, como qualquer loja faz.
-      if (resposta.ok) router.push('/meucarrinho/')
+      setAcaoEmCurso(null)
+
+      if (resposta.ok && levarParaOCarrinho) router.push('/meucarrinho/')
     })
   }
 
@@ -118,6 +137,19 @@ export function SeletorDeCompra({
 
       {/* -------------------------------------------------------- quantidade */}
       <section>
+        {provaDaUltimaVenda && (
+          <p
+            style={{
+              margin: '0 0 0.7rem',
+              fontSize: '0.9rem',
+              fontStyle: 'italic',
+              color: 'var(--lumini-ink-soft)',
+            }}
+          >
+            {provaDaUltimaVenda}
+          </p>
+        )}
+
         <h2 style={estiloRotulo}>Quantidade</h2>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
           {produto.lotTable.map((linha) => (
@@ -283,15 +315,29 @@ export function SeletorDeCompra({
 
       {/* ------------------------------------------------------------ ações */}
       <section style={{ display: 'grid', gap: '0.6rem' }}>
-        <button type="button" onClick={enviar} disabled={enviando} style={estiloBotaoPrincipal}>
-          {enviando ? 'Conferindo...' : 'Adicionar ao carrinho'}
+        <button
+          type="button"
+          onClick={() => enviar(true)}
+          disabled={enviando}
+          style={estiloBotaoPrincipal}
+        >
+          {acaoEmCurso === 'agora' ? 'Conferindo...' : 'Comprar agora'}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => enviar(false)}
+          disabled={enviando}
+          style={estiloBotaoSecundario}
+        >
+          {acaoEmCurso === 'carrinho' ? 'Conferindo...' : 'Adicionar ao carrinho'}
         </button>
 
         <a
           href={`https://wa.me/${whatsappNumber}?text=${encodeURIComponent(mensagemWhatsApp)}`}
           target="_blank"
           rel="noopener noreferrer"
-          style={estiloBotaoSecundario}
+          style={estiloBotaoDiscreto}
         >
           Tirar dúvida pelo WhatsApp
         </a>
@@ -308,9 +354,7 @@ export function SeletorDeCompra({
               fontSize: '0.92rem',
             }}
           >
-            {resultado.ok
-              ? 'Adicionado ao carrinho. Levando você para lá...'
-              : resultado.mensagem}
+            {resultado.ok ? <ConfirmacaoDeAdicao /> : resultado.mensagem}
           </p>
         )}
       </section>
@@ -362,12 +406,40 @@ const estiloBotaoPrincipal: React.CSSProperties = {
 const estiloBotaoSecundario: React.CSSProperties = {
   padding: '0.8rem 1.2rem',
   borderRadius: 8,
-  border: '1px solid var(--lumini-line)',
+  border: '1px solid var(--lumini-ink)',
   background: '#fff',
   color: 'var(--lumini-ink)',
   fontSize: '0.95rem',
   textAlign: 'center',
   textDecoration: 'none',
+  cursor: 'pointer',
+  fontFamily: 'inherit',
+}
+
+/** O WhatsApp é a terceira opção, e tem de parecer a terceira. */
+const estiloBotaoDiscreto: React.CSSProperties = {
+  ...estiloBotaoSecundario,
+  border: '1px solid var(--lumini-line)',
+  color: 'var(--lumini-ink-soft)',
+}
+
+/**
+ * Confirmação de quem adicionou e ficou.
+ *
+ * Ela continua na página para escolher a próxima peça, então a mensagem não
+ * pode empurrá-la para lugar nenhum — só avisar que deu certo e deixar o
+ * caminho do carrinho à mão, se ela quiser.
+ */
+function ConfirmacaoDeAdicao() {
+  return (
+    <>
+      Adicionado ao carrinho.{' '}
+      <a href="/meucarrinho/" style={{ color: 'inherit', fontWeight: 600 }}>
+        Ver carrinho
+      </a>{' '}
+      ou continue escolhendo.
+    </>
+  )
 }
 
 const estiloLink: React.CSSProperties = {

@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 
 import { getProductBySlug } from '../../../../commerce/catalog/get-product.ts'
+import { provaSocialDoProduto } from '../../../../commerce/catalog/get-prova-social.ts'
 import { SeletorDeCompra } from './SeletorDeCompra.tsx'
 
 type Props = {
@@ -43,6 +44,14 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const maiorLote = produto.lotTable[produto.lotTable.length - 1]
   const capa = produto.images[0]
 
+  // Chave temporária para comparar as duas formas de prova social lado a
+  // lado, no produto de verdade: ?prova=1, ?prova=2, ?prova=nenhuma.
+  // Quando a decisão estiver tomada, sai daqui e fica só a escolhida.
+  const prova = await provaSocialDoProduto(produto.id)
+  const modoDaProva = typeof busca.prova === 'string' ? busca.prova : 'ambas'
+  const mostrarFoto = (modoDaProva === 'ambas' || modoDaProva === '1') && prova.foto !== null
+  const mostrarFrase = (modoDaProva === 'ambas' || modoDaProva === '2') && prova.frase !== null
+
   return (
     <main style={{ maxWidth: '68rem', margin: '0 auto', padding: '3rem 1.5rem 5rem' }}>
       <nav style={{ fontSize: '0.85rem', color: 'var(--lumini-ink-soft)', marginBottom: '2rem' }}>
@@ -82,7 +91,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             </div>
           )}
 
-          {produto.images.length > 1 && (
+          {(produto.images.length > 1 || mostrarFoto) && (
             <div
               style={{
                 display: 'grid',
@@ -99,7 +108,35 @@ export default async function ProductPage({ params, searchParams }: Props) {
                   style={{ width: '100%', borderRadius: 8, background: '#fff' }}
                 />
               ))}
+
+              {/* A foto de cliente é a última da galeria, não uma seção nova:
+                  entra no gesto que a pessoa já está fazendo. */}
+              {mostrarFoto && prova.foto && (
+                <img
+                  src={prova.foto.url}
+                  alt={prova.foto.alt}
+                  style={{
+                    width: '100%',
+                    borderRadius: 8,
+                    background: '#fff',
+                    outline: '1px solid var(--lumini-gold)',
+                    outlineOffset: -1,
+                  }}
+                />
+              )}
             </div>
+          )}
+
+          {mostrarFoto && prova.foto?.legenda && (
+            <p
+              style={{
+                margin: '0.5rem 0 0',
+                fontSize: '0.82rem',
+                color: 'var(--lumini-ink-soft)',
+              }}
+            >
+              A última foto é de uma cliente · {prova.foto.legenda}
+            </p>
           )}
         </div>
 
@@ -125,6 +162,7 @@ export default async function ProductPage({ params, searchParams }: Props) {
             whatsappNumber={process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? '5533999478774'}
             aromaInicial={aroma}
             quantidadeInicial={Number.isFinite(quantidade) ? quantidade : null}
+            provaDaUltimaVenda={mostrarFrase ? prova.frase : null}
           />
         </div>
       </div>
