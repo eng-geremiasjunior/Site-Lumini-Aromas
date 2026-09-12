@@ -732,6 +732,10 @@ export interface Order {
       }[]
     | null;
   shippingAddress?: {
+    /**
+     * É este nome que vai na etiqueta. Em pedido presente, é o de quem ganha — não o de quem pagou.
+     */
+    recipientName?: string | null;
     postalCode?: string | null;
     street?: string | null;
     number?: string | null;
@@ -757,6 +761,18 @@ export interface Order {
   dateShipped?: string | null;
   dateCompleted?: string | null;
   customerNote?: string | null;
+  /**
+   * Quando é presente, três coisas mudam na embalagem: vai o cartão dentro, nenhum preço aparece no pacote, e a etiqueta sai no nome de quem recebe.
+   */
+  presente?: {
+    ehPresente?: boolean | null;
+    de?: string | null;
+    para?: string | null;
+    /**
+     * Imprima exatamente como está escrito, acento por acento.
+     */
+    mensagem?: string | null;
+  };
   subtotal: number;
   shippingTotal?: number | null;
   discountTotal?: number | null;
@@ -1555,6 +1571,7 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingAddress?:
     | T
     | {
+        recipientName?: T;
         postalCode?: T;
         street?: T;
         number?: T;
@@ -1571,6 +1588,14 @@ export interface OrdersSelect<T extends boolean = true> {
   dateShipped?: T;
   dateCompleted?: T;
   customerNote?: T;
+  presente?:
+    | T
+    | {
+        ehPresente?: T;
+        de?: T;
+        para?: T;
+        mensagem?: T;
+      };
   subtotal?: T;
   shippingTotal?: T;
   discountTotal?: T;

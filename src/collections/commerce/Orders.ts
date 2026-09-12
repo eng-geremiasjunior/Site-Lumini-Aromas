@@ -305,6 +305,15 @@ export const Orders: CollectionConfig = {
               label: 'Endereço de entrega',
               fields: [
                 {
+                  name: 'recipientName',
+                  type: 'text',
+                  label: 'Quem recebe',
+                  admin: {
+                    description:
+                      'É este nome que vai na etiqueta. Em pedido presente, é o de quem ganha — não o de quem pagou.',
+                  },
+                },
+                {
                   type: 'row',
                   fields: [
                     { name: 'postalCode', type: 'text', label: 'CEP', admin: { width: '25%' } },
@@ -387,6 +396,40 @@ export const Orders: CollectionConfig = {
               name: 'customerNote',
               type: 'textarea',
               label: 'Observação do cliente',
+            },
+            {
+              name: 'presente',
+              type: 'group',
+              label: 'Presente',
+              admin: {
+                description:
+                  'Quando é presente, três coisas mudam na embalagem: vai o cartão dentro, nenhum preço aparece no pacote, e a etiqueta sai no nome de quem recebe.',
+              },
+              fields: [
+                {
+                  name: 'ehPresente',
+                  type: 'checkbox',
+                  label: 'Este pedido é um presente',
+                  defaultValue: false,
+                },
+                {
+                  type: 'row',
+                  admin: { condition: (_, irmaos) => Boolean(irmaos?.ehPresente) },
+                  fields: [
+                    { name: 'de', type: 'text', label: 'De parte de', admin: { width: '50%' } },
+                    { name: 'para', type: 'text', label: 'Para', admin: { width: '50%' } },
+                  ],
+                },
+                {
+                  name: 'mensagem',
+                  type: 'textarea',
+                  label: 'Recado do cartão',
+                  admin: {
+                    condition: (_, irmaos) => Boolean(irmaos?.ehPresente),
+                    description: 'Imprima exatamente como está escrito, acento por acento.',
+                  },
+                },
+              ],
             },
           ],
         },

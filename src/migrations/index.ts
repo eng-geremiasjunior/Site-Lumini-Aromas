@@ -8,6 +8,7 @@ import * as migration_20260911_233030_cupons from './20260911_233030_cupons';
 import * as migration_20260911_235830_carrinho_abandonado from './20260911_235830_carrinho_abandonado';
 import * as migration_20260912_043707_comprovante from './20260912_043707_comprovante';
 import * as migration_20260912_051512_eventos from './20260912_051512_eventos';
+import * as migration_20260912_132549_presente from './20260912_132549_presente';
 
 export const migrations = [
   {
@@ -58,6 +59,11 @@ export const migrations = [
   {
     up: migration_20260912_051512_eventos.up,
     down: migration_20260912_051512_eventos.down,
-    name: '20260912_051512_eventos'
+    name: '20260912_051512_eventos',
+  },
+  {
+    up: migration_20260912_132549_presente.up,
+    down: migration_20260912_132549_presente.down,
+    name: '20260912_132549_presente'
   },
 ];

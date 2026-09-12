@@ -5,6 +5,7 @@ import { getCart } from '../cart/cart-service.ts'
 import { cotarFreteDoCarrinho, FRETE_A_COMBINAR_ID } from '../shipping/quote-cart.ts'
 import { formatIsoDate, addBusinessDays } from '../shipping/business-days.ts'
 import { totalComCupom } from '../coupons/coupon.ts'
+import { montarCartao, nomeParaEntrega } from './presente.ts'
 
 /**
  * Criação do pedido.
@@ -47,6 +48,8 @@ export type DadosDoPedido = {
   aceitouTermos: boolean
   optInWhatsapp?: boolean
   optInMarketing?: boolean
+  /** Preenchido quando a compra é para presentear outra pessoa. */
+  presente?: { de: string; para: string; mensagem: string } | null
 }
 
 export type ResultadoPedido =
@@ -166,6 +169,18 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
   // O navegador não manda desconto: manda, no máximo, um código.
   const totais = totalComCupom(carrinho.subtotal, freteEscolhido.priceCents, carrinho.cupom)
   const total = totais.total
+
+  // O cartão é conferido aqui, no servidor, como tudo o mais: recado longo
+  // demais para caber impresso não deve virar pedido e só aparecer como
+  // problema na hora de embalar.
+  let cartao = null
+  if (dados.presente) {
+    const conferido = montarCartao(dados.presente)
+    if (!conferido.ok) {
+      return { ok: false, mensagem: conferido.mensagem, campo: conferido.campo }
+    }
+    cartao = conferido.cartao
+  }
   const numero = await proximoNumero()
   const agora = new Date().toISOString()
 
@@ -185,6 +200,7 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
       document: dados.cliente.documento,
       items: itens,
       shippingAddress: {
+        recipientName: nomeParaEntrega(cartao, dados.cliente.nome),
         postalCode: dados.endereco.cep,
         street: dados.endereco.rua,
         number: dados.endereco.numero,
@@ -201,6 +217,9 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
       eventDate: dados.dataEvento,
       productionDeadline: prazo,
       customerNote: dados.observacao,
+      presente: cartao
+        ? { ehPresente: true, de: cartao.de, para: cartao.para, mensagem: cartao.mensagem }
+        : { ehPresente: false },
       subtotal: carrinho.subtotal,
       shippingTotal: totais.frete,
       discountTotal: totais.desconto,

@@ -8,16 +8,16 @@
     "node": ">=20.9.0"
   },
   "scripts": {
-    "dev": "cross-env NODE_OPTIONS=--no-deprecation next dev",
-    "build": "cross-env NODE_OPTIONS=--no-deprecation next build",
-    "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
+    "dev": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" next dev",
+    "build": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" next build",
+    "start": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" next start",
     "test": "node --test \"src/**/*.test.ts\"",
     "typecheck": "tsc --noEmit",
-    "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
-    "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
-    "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
-    "migrate": "cross-env NODE_OPTIONS=--no-deprecation payload migrate",
-    "migrate:create": "cross-env NODE_OPTIONS=--no-deprecation payload migrate:create"
+    "payload": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" payload",
+    "generate:types": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" payload generate:types",
+    "generate:importmap": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" payload generate:importmap",
+    "migrate": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" payload migrate",
+    "migrate:create": "cross-env \"NODE_OPTIONS=--no-deprecation --max-old-space-size=4096\" payload migrate:create"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.88.0",

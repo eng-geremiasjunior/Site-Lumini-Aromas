@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 
 import type { FreteResultado } from '../../../commerce/shipping/quote-cart.ts'
 import { FRETE_A_COMBINAR_ID } from '../../../commerce/shipping/quote.ts'
+import { LIMITE_DA_MENSAGEM } from '../../../commerce/orders/presente.ts'
 import {
   buscarEnderecoPorCep,
   calcularFreteCheckout,
@@ -48,6 +49,11 @@ export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
   const [tipoEvento, setTipoEvento] = useState('')
   const [dataEvento, setDataEvento] = useState('')
   const [observacao, setObservacao] = useState('')
+
+  const [ehPresente, setEhPresente] = useState(false)
+  const [presenteDe, setPresenteDe] = useState('')
+  const [presentePara, setPresentePara] = useState('')
+  const [presenteMensagem, setPresenteMensagem] = useState('')
 
   const [aceitouTermos, setAceitouTermos] = useState(false)
   const [optInWhatsapp, setOptInWhatsapp] = useState(false)
@@ -104,6 +110,9 @@ export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
         aceitouTermos,
         optInWhatsapp,
         optInMarketing,
+        presente: ehPresente
+          ? { de: presenteDe || nome, para: presentePara, mensagem: presenteMensagem }
+          : null,
       })
 
       if (resposta.ok) {
@@ -182,6 +191,85 @@ export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
         {/* ------------------------------------------------------- entrega */}
         <section>
           <h2 style={estiloSecao}>2. Entrega</h2>
+
+          {/* O presente entra antes do endereço de propósito: marcado aqui,
+              o endereço abaixo passa a ser o de quem recebe, e a pergunta
+              muda de sentido antes de ela começar a digitar. */}
+          <label
+            style={{
+              display: 'flex',
+              gap: '0.6rem',
+              alignItems: 'flex-start',
+              padding: '0.9rem 1rem',
+              border: '1px solid var(--lumini-line)',
+              borderRadius: 8,
+              background: ehPresente ? '#fff' : 'transparent',
+              marginBottom: '1rem',
+              cursor: 'pointer',
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={ehPresente}
+              onChange={(e) => setEhPresente(e.target.checked)}
+              style={{ marginTop: '0.2rem' }}
+            />
+            <span>
+              É um presente para outra pessoa
+              <span style={{ ...estiloDica, display: 'block' }}>
+                Vai um cartão escrito por você dentro da caixa, e nenhum preço aparece no pacote.
+              </span>
+            </span>
+          </label>
+
+          {ehPresente && (
+            <div
+              style={{
+                display: 'grid',
+                gap: '0.8rem',
+                padding: '1rem',
+                border: '1px solid var(--lumini-line)',
+                borderRadius: 8,
+                background: '#fff',
+                marginBottom: '1rem',
+              }}
+            >
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.8rem' }}>
+                <Campo rotulo="De parte de" dica="Deixe vazio para um presente anônimo.">
+                  <input
+                    style={estiloCampo}
+                    value={presenteDe}
+                    onChange={(e) => setPresenteDe(e.target.value)}
+                    placeholder={nome}
+                  />
+                </Campo>
+                <Campo rotulo="Para" obrigatorio>
+                  <input
+                    style={estiloCampo}
+                    value={presentePara}
+                    onChange={(e) => setPresentePara(e.target.value)}
+                  />
+                </Campo>
+              </div>
+
+              <Campo
+                rotulo="Escreva algo especial"
+                dica={`Sai impresso exatamente como você escrever. ${presenteMensagem.length}/${LIMITE_DA_MENSAGEM}`}
+              >
+                <textarea
+                  rows={3}
+                  maxLength={LIMITE_DA_MENSAGEM}
+                  style={{ ...estiloCampo, fontFamily: 'inherit', resize: 'vertical' }}
+                  value={presenteMensagem}
+                  onChange={(e) => setPresenteMensagem(e.target.value)}
+                />
+              </Campo>
+
+              <p style={{ ...estiloDica, margin: 0 }}>
+                O endereço abaixo é o de quem vai receber o presente.
+              </p>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gap: '0.8rem' }}>
             <Campo rotulo="CEP" obrigatorio dica="Preenchemos o endereço e calculamos o frete.">
