@@ -83,6 +83,8 @@ export interface Config {
     coupons: Coupon;
     'gift-cards': GiftCard;
     'integration-events': IntegrationEvent;
+    'finance-categories': FinanceCategory;
+    'ledger-entries': LedgerEntry;
     users: User;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -106,6 +108,8 @@ export interface Config {
     coupons: CouponsSelect<false> | CouponsSelect<true>;
     'gift-cards': GiftCardsSelect<false> | GiftCardsSelect<true>;
     'integration-events': IntegrationEventsSelect<false> | IntegrationEventsSelect<true>;
+    'finance-categories': FinanceCategoriesSelect<false> | FinanceCategoriesSelect<true>;
+    'ledger-entries': LedgerEntriesSelect<false> | LedgerEntriesSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -883,6 +887,19 @@ export interface Order {
   shippingTotal?: number | null;
   discountTotal?: number | null;
   total: number;
+  /**
+   * O que este pedido custou além do produto. O custo das peças já vem do cadastro e não se digita aqui. A taxa do cartão chega sozinha do Mercado Pago.
+   */
+  custos?: {
+    /**
+     * O que a etiqueta custou. Pode ser diferente do frete cobrado.
+     */
+    fretePago?: number | null;
+    /**
+     * Caixa, plástico-bolha, fita.
+     */
+    embalagem?: number | null;
+  };
   paymentMethod?: ('pix' | 'credit_card' | 'debit_card' | 'mp_link' | 'external') | null;
   installments?: number | null;
   /**
@@ -1274,6 +1291,70 @@ export interface IntegrationEvent {
   createdAt: string;
 }
 /**
+ * As gavetas onde cada despesa e cada entrada é guardada.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-categories".
+ */
+export interface FinanceCategory {
+  id: number;
+  /**
+   * Como você chama essa despesa no dia a dia. Ex.: Anúncios Instagram.
+   */
+  nome: string;
+  /**
+   * Define em que linha do relatório essa categoria aparece. Na dúvida entre variável e fixa: variável é o que só acontece porque houve venda.
+   */
+  grupo: 'receita' | 'deducao' | 'variavel' | 'marketing' | 'fixa' | 'financeira';
+  /**
+   * Separa o investimento por canal no relatório. É o que mostra se o remarketing do Google se paga.
+   */
+  plataforma?: ('Meta' | 'Google' | 'Outros') | null;
+  /**
+   * Opcional. Serve de lembrete para você e para o contador.
+   */
+  observacao?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Despesas e entradas que não vêm de um pedido.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ledger-entries".
+ */
+export interface LedgerEntry {
+  id: number;
+  /**
+   * Ex.: Campanha de setembro no Instagram.
+   */
+  descricao: string;
+  categoria: number | FinanceCategory;
+  /**
+   * Sempre positivo. O relatório já sabe se soma ou subtrai.
+   */
+  valor: number;
+  /**
+   * A que mês esta despesa pertence. É o que vale no resultado.
+   */
+  competencia: string;
+  /**
+   * Quando o dinheiro saiu de fato. Deixe em branco se ainda não pagou.
+   */
+  pagoEm?: string | null;
+  /**
+   * Nota, recibo ou print. Opcional, mas ajuda no fechamento com o contador.
+   */
+  comprovante?: (number | null) | Media;
+  /**
+   * Só quando a despesa é de um pedido específico. Ex.: um frete extra combinado.
+   */
+  pedido?: (number | null) | Order;
+  observacao?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * Quem pode entrar no painel e o que cada pessoa enxerga.
  *
  * This interface was referenced by `Config`'s JSON-Schema
@@ -1393,6 +1474,14 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'integration-events';
         value: number | IntegrationEvent;
+      } | null)
+    | ({
+        relationTo: 'finance-categories';
+        value: number | FinanceCategory;
+      } | null)
+    | ({
+        relationTo: 'ledger-entries';
+        value: number | LedgerEntry;
       } | null)
     | ({
         relationTo: 'users';
@@ -1842,6 +1931,12 @@ export interface OrdersSelect<T extends boolean = true> {
   shippingTotal?: T;
   discountTotal?: T;
   total?: T;
+  custos?:
+    | T
+    | {
+        fretePago?: T;
+        embalagem?: T;
+      };
   paymentMethod?: T;
   installments?: T;
   paymentReceipt?: T;
@@ -2042,6 +2137,34 @@ export interface IntegrationEventsSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "finance-categories_select".
+ */
+export interface FinanceCategoriesSelect<T extends boolean = true> {
+  nome?: T;
+  grupo?: T;
+  plataforma?: T;
+  observacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ledger-entries_select".
+ */
+export interface LedgerEntriesSelect<T extends boolean = true> {
+  descricao?: T;
+  categoria?: T;
+  valor?: T;
+  competencia?: T;
+  pagoEm?: T;
+  comprovante?: T;
+  pedido?: T;
+  observacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
@@ -2223,6 +2346,18 @@ export interface StoreSetting {
    */
   legalVersion?: string | null;
   /**
+   * O RBT12 que o contador usa. É ele que define a alíquota do Simples: sem esse número, o relatório usa a primeira faixa e mostra um lucro maior do que o real. Confira uma vez por mês.
+   */
+  rbt12?: number | null;
+  /**
+   * Usado só quando o produto não tem anexo próprio no cadastro.
+   */
+  anexoPadrao?: ('II' | 'I') | null;
+  /**
+   * Caixa, plástico-bolha e fita de um envio típico. Entra no resultado dos pedidos em que o valor real não foi informado. Deixe vazio para não estimar nada.
+   */
+  custoDeEmbalagemPadrao?: number | null;
+  /**
    * As chaves ficam nas variáveis de ambiente, nunca aqui. Este campo é só para anotações.
    */
   integrationsNote?: string | null;
@@ -2268,6 +2403,9 @@ export interface StoreSettingsSelect<T extends boolean = true> {
   termsOfUse?: T;
   privacyPolicy?: T;
   legalVersion?: T;
+  rbt12?: T;
+  anexoPadrao?: T;
+  custoDeEmbalagemPadrao?: T;
   integrationsNote?: T;
   updatedAt?: T;
   createdAt?: T;

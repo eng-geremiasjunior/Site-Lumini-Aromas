@@ -21,6 +21,8 @@ import { Customers } from './collections/commerce/Customers.ts'
 import { GiftCards } from './collections/commerce/GiftCards.ts'
 import { IntegrationEvents } from './collections/commerce/IntegrationEvents.ts'
 import { Orders } from './collections/commerce/Orders.ts'
+import { FinanceCategories } from './collections/finance/FinanceCategories.ts'
+import { LedgerEntries } from './collections/finance/LedgerEntries.ts'
 import { StoreSettings } from './globals/StoreSettings.ts'
 
 const filename = fileURLToPath(import.meta.url)
@@ -58,11 +60,22 @@ export default buildConfig({
       graphics: {},
       // O botão fica antes das coleções no menu: lançar a venda do WhatsApp
       // é a ação mais frequente do dia.
-      beforeNavLinks: ['@/admin/BotaoNovoPedido#BotaoNovoPedido'],
+      beforeNavLinks: [
+        '@/admin/BotaoNovoPedido#BotaoNovoPedido',
+        '@/admin/BotaoResultado#BotaoResultado',
+      ],
       views: {
         novoPedido: {
           Component: '@/admin/NovoPedido#NovoPedido',
           path: '/novo-pedido',
+        },
+        resultadoDoMes: {
+          Component: '@/admin/dre/Dre#Dre',
+          path: '/dre',
+        },
+        relatorioDoMes: {
+          Component: '@/admin/dre/Relatorio#RelatorioDoMes',
+          path: '/relatorio-do-mes',
         },
       },
     },
@@ -95,6 +108,9 @@ export default buildConfig({
     Coupons,
     GiftCards,
     IntegrationEvents,
+    // Financeiro
+    FinanceCategories,
+    LedgerEntries,
     // Configurações
     Users,
   ],

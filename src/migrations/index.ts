@@ -14,6 +14,7 @@ import * as migration_20260912_155235_cartao_no_pedido from './20260912_155235_c
 import * as migration_20260912_173547_logo_no_carrinho from './20260912_173547_logo_no_carrinho';
 import * as migration_20260912_174717_ocasioes from './20260912_174717_ocasioes';
 import * as migration_20260912_175534_pagina_de_venda from './20260912_175534_pagina_de_venda';
+import * as migration_20260912_202105_financeiro from './20260912_202105_financeiro';
 
 export const migrations = [
   {
@@ -94,6 +95,11 @@ export const migrations = [
   {
     up: migration_20260912_175534_pagina_de_venda.up,
     down: migration_20260912_175534_pagina_de_venda.down,
-    name: '20260912_175534_pagina_de_venda'
+    name: '20260912_175534_pagina_de_venda',
+  },
+  {
+    up: migration_20260912_202105_financeiro.up,
+    down: migration_20260912_202105_financeiro.down,
+    name: '20260912_202105_financeiro'
   },
 ];

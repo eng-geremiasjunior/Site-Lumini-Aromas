@@ -495,6 +495,35 @@ export const Orders: CollectionConfig = {
               ],
             },
             {
+              name: 'custos',
+              type: 'group',
+              label: 'Custos deste pedido',
+              admin: {
+                description:
+                  'O que este pedido custou além do produto. O custo das peças já vem do cadastro e não se digita aqui. A taxa do cartão chega sozinha do Mercado Pago.',
+              },
+              fields: [
+                {
+                  type: 'row',
+                  fields: [
+                    money({
+                      name: 'fretePago',
+                      label: 'Frete pago',
+                      admin: {
+                        width: '50%',
+                        description: 'O que a etiqueta custou. Pode ser diferente do frete cobrado.',
+                      },
+                    }),
+                    money({
+                      name: 'embalagem',
+                      label: 'Embalagem de envio',
+                      admin: { width: '50%', description: 'Caixa, plástico-bolha, fita.' },
+                    }),
+                  ],
+                },
+              ],
+            },
+            {
               type: 'row',
               fields: [
                 {

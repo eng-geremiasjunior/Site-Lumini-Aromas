@@ -229,6 +229,54 @@ export const StoreSettings: GlobalConfig = {
         },
 
         {
+          label: 'Financeiro',
+          description: 'O que o relatório do mês precisa saber para calcular o imposto.',
+          fields: [
+            {
+              type: 'row',
+              fields: [
+                {
+                  name: 'rbt12',
+                  type: 'number',
+                  label: 'Faturamento dos últimos 12 meses (R$)',
+                  min: 0,
+                  admin: {
+                    width: '50%',
+                    description:
+                      'O RBT12 que o contador usa. É ele que define a alíquota do Simples: sem esse número, o relatório usa a primeira faixa e mostra um lucro maior do que o real. Confira uma vez por mês.',
+                  },
+                },
+                {
+                  name: 'anexoPadrao',
+                  type: 'select',
+                  label: 'Anexo padrão',
+                  defaultValue: 'II',
+                  options: [
+                    { label: 'Anexo II - indústria (velas fabricadas)', value: 'II' },
+                    { label: 'Anexo I - comércio (itens revendidos)', value: 'I' },
+                  ],
+                  admin: {
+                    width: '50%',
+                    description:
+                      'Usado só quando o produto não tem anexo próprio no cadastro.',
+                  },
+                },
+              ],
+            },
+            {
+              name: 'custoDeEmbalagemPadrao',
+              type: 'number',
+              label: 'Custo médio de embalagem por pedido (R$)',
+              min: 0,
+              admin: {
+                description:
+                  'Caixa, plástico-bolha e fita de um envio típico. Entra no resultado dos pedidos em que o valor real não foi informado. Deixe vazio para não estimar nada.',
+              },
+            },
+          ],
+        },
+
+        {
           label: 'Integrações',
           description: 'Somente o dono enxerga esta aba.',
           fields: [
