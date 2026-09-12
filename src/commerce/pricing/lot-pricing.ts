@@ -222,6 +222,74 @@ export function guardLot(config: LotPricingConfig, qty: number): GuardResult {
   return { ok: true }
 }
 
+/**
+ * Venda negociada: quantidade e preço por peça combinados na conversa.
+ *
+ * A vitrine vende em faixas fechadas — 20, 30, 40 — e isso é decisão de
+ * negócio, não limitação: foi testado nos anúncios e qualifica melhor quem
+ * chega. Mas no WhatsApp a conversa é outra: vende-se 21, 28, 33, porque a
+ * cliente contou os convidados e é esse o número dela.
+ *
+ * Então existe este caminho, e ele é explícito. Não é o `guardLot` com uma
+ * exceção escondida dentro: é uma porta separada, que só o painel abre, com
+ * as suas próprias regras.
+ *
+ * O que continua igual, e não se negocia: **o preço do lote não é digitado**.
+ * Digita-se o preço da peça, e o total é sempre `quantidade × preço`. Foi o
+ * total digitado à mão que gerou os oito preços errados no WooCommerce.
+ */
+export function guardNegociado(qty: number, unitPriceCents: number): GuardResult {
+  if (!Number.isInteger(qty) || qty <= 0) {
+    return { ok: false, code: 'QTY_INVALID', message: 'Informe uma quantidade válida de peças.' }
+  }
+
+  if (!Number.isInteger(unitPriceCents) || unitPriceCents <= 0) {
+    return { ok: false, code: 'CONFIG_INVALID', message: 'Informe o preço por peça.' }
+  }
+
+  return { ok: true }
+}
+
+/**
+ * O que merece um segundo olhar antes de lançar.
+ *
+ * Nada aqui impede a venda — quem está digitando é o dono, e ele sabe o que
+ * combinou. Mas um preço dez vezes menor que o de tabela quase nunca é
+ * desconto: é a vírgula no lugar errado, e vira um lote de 100 peças vendido
+ * por trinta e oito reais.
+ */
+export function avisosDaNegociacao(
+  config: LotPricingConfig,
+  qty: number,
+  unitPriceCents: number,
+): string[] {
+  const avisos: string[] = []
+
+  if (qty < config.minQty) {
+    avisos.push(`São ${qty} peças, abaixo do mínimo de ${config.minQty} que o site pratica.`)
+  }
+
+  if (qty > config.maxQty) {
+    avisos.push(`São ${qty} peças, acima das ${config.maxQty} que o site oferece sozinho.`)
+  }
+
+  const deTabela = unitPriceFor(config, Math.max(qty, config.minQty))
+
+  if (deTabela > 0 && unitPriceCents !== deTabela) {
+    const proporcao = unitPriceCents / deTabela
+
+    if (proporcao <= 0.5 || proporcao >= 2) {
+      avisos.push(
+        `O preço por peça está muito longe da tabela (${formatBRL(deTabela)}). Confira a vírgula.`,
+      )
+    } else {
+      avisos.push(`A tabela cobraria ${formatBRL(deTabela)} por peça neste tamanho.`)
+    }
+  }
+
+  return avisos
+}
+
 /** Formata centavos como moeda brasileira (para e-mails, PDFs e telas). */
 export function formatBRL(cents: number): string {
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100)

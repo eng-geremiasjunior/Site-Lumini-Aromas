@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 
+import { avisosDaNegociacao, type LotPricingConfig } from '../commerce/pricing/lot-pricing.ts'
 import {
   centavosDe,
   formatarReais,
@@ -16,6 +17,8 @@ import { guardarComprovante, lancarVenda, lerMensagemColada, type ItemDaVenda } 
 export type ProdutoParaVenda = {
   slug: string
   nome: string
+  /** A tabela de preço do produto, para conferir a venda combinada. */
+  config: LotPricingConfig
   aromas: Array<{ chave: string; rotulo: string }>
   faixas: Array<{ qty: number; lotPrice: number; unitPrice: number }>
   camposDePersonalizacao: Array<{ rotulo: string; obrigatorio: boolean; limite: number | null }>
@@ -26,9 +29,34 @@ type LinhaDoPedido = {
   aroma: string
   qty: number
   personalizacao: Record<string, string>
+  /**
+   * 'faixa' usa a tabela do site — 20, 30, 40. 'livre' é a venda combinada
+   * no WhatsApp, onde 21 e 28 são números normais. Um ou outro, por linha.
+   */
+  modo: 'faixa' | 'livre'
+  /** Preço por peça combinado, em texto com máscara. Só no modo livre. */
+  precoPorPeca: string
 }
 
 const brl = formatarReais
+
+/** Linha nova já no modo de faixa, que é o caso mais comum. */
+function linhaNova(produto?: ProdutoParaVenda): LinhaDoPedido {
+  return {
+    slug: produto?.slug ?? '',
+    aroma: '',
+    qty: produto?.faixas[0]?.qty ?? 20,
+    personalizacao: {},
+    modo: 'faixa',
+    precoPorPeca: produto ? mascararDinheiro(String(produto.config.unitPrice)) : '',
+  }
+}
+
+/** Total de uma linha, no modo em que ela está. */
+function totalDaLinha(linha: LinhaDoPedido, produto?: ProdutoParaVenda): number {
+  if (linha.modo === 'livre') return centavosDe(linha.precoPorPeca) * linha.qty
+  return produto?.faixas.find((faixa) => faixa.qty === linha.qty)?.lotPrice ?? 0
+}
 
 export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }) {
   const [mensagem, setMensagem] = useState('')
@@ -54,7 +82,7 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
   const [observacao, setObservacao] = useState('')
 
   const [linhas, setLinhas] = useState<LinhaDoPedido[]>([
-    { slug: produtos[0]?.slug ?? '', aroma: '', qty: produtos[0]?.faixas[0]?.qty ?? 20, personalizacao: {} },
+    linhaNova(produtos[0]),
   ])
 
   const [frete, setFrete] = useState('')
@@ -78,11 +106,10 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
     [produtos],
   )
 
-  const subtotal = linhas.reduce((soma, linha) => {
-    const produto = produtos.find((p) => p.slug === linha.slug)
-    const faixa = produto?.faixas.find((f) => f.qty === linha.qty)
-    return soma + (faixa?.lotPrice ?? 0)
-  }, 0)
+  const subtotal = linhas.reduce(
+    (soma, linha) => soma + totalDaLinha(linha, produtos.find((p) => p.slug === linha.slug)),
+    0,
+  )
 
   const total = subtotal + centavosDe(frete)
 
@@ -120,8 +147,22 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
           if (encontrado) primeira.aroma = encontrado.chave
         }
 
-        if (dados.quantidade && produto?.faixas.some((f) => f.qty === dados.quantidade)) {
+        if (dados.quantidade && produto) {
           primeira.qty = dados.quantidade
+
+          // A cliente pediu 28 peças. Isso não existe na tabela do site, e
+          // não é erro dela — é o número de convidados. A linha muda sozinha
+          // para o modo combinado, já com o preço da tabela como ponto de
+          // partida, e você ajusta se combinou outro.
+          const ehFaixa = produto.faixas.some((faixa) => faixa.qty === dados.quantidade)
+          primeira.modo = ehFaixa ? 'faixa' : 'livre'
+
+          if (!ehFaixa) {
+            const referencia =
+              produto.faixas.find((faixa) => faixa.qty >= dados.quantidade!)?.unitPrice ??
+              produto.config.unitPrice
+            primeira.precoPorPeca = mascararDinheiro(String(referencia))
+          }
         }
 
         if (dados.frase && produto?.camposDePersonalizacao[0]) {
@@ -157,6 +198,7 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
         variantKey: linha.aroma || null,
         qty: linha.qty,
         personalization: linha.personalizacao,
+        precoPorPecaCentavos: linha.modo === 'livre' ? centavosDe(linha.precoPorPeca) : null,
       }))
 
       const resposta = await lancarVenda({
@@ -339,7 +381,6 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
       <Secao titulo="O que ela comprou">
         {linhas.map((linha, indice) => {
           const produto = produtos.find((p) => p.slug === linha.slug)
-          const faixa = produto?.faixas.find((f) => f.qty === linha.qty)
 
           return (
             <div key={indice} style={{ ...cartao, marginTop: indice === 0 ? 0 : '0.8rem' }}>
@@ -375,20 +416,62 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
                   </Campo>
                 )}
 
-                <Campo rotuloTexto="Quantidade">
-                  <select
-                    style={campo}
-                    value={linha.qty}
-                    onChange={(e) => trocarLinha(setLinhas, indice, { qty: Number(e.target.value) })}
-                  >
-                    {produto?.faixas.map((f) => (
-                      <option key={f.qty} value={f.qty}>
-                        {f.qty} peças
-                      </option>
-                    ))}
-                  </select>
-                </Campo>
+                {linha.modo === 'faixa' ? (
+                  <Campo rotuloTexto="Quantidade">
+                    <select
+                      style={campo}
+                      value={linha.qty}
+                      onChange={(e) => trocarLinha(setLinhas, indice, { qty: Number(e.target.value) })}
+                    >
+                      {produto?.faixas.map((f) => (
+                        <option key={f.qty} value={f.qty}>
+                          {f.qty} peças
+                        </option>
+                      ))}
+                    </select>
+                  </Campo>
+                ) : (
+                  <>
+                    <Campo rotuloTexto="Preço por peça">
+                      <input
+                        style={campo}
+                        value={linha.precoPorPeca}
+                        onChange={(e) =>
+                          trocarLinha(setLinhas, indice, {
+                            precoPorPeca: mascararDinheiro(e.target.value),
+                          })
+                        }
+                      />
+                    </Campo>
+                    <Campo rotuloTexto="Quantidade">
+                      <input
+                        style={campo}
+                        inputMode="numeric"
+                        value={linha.qty || ''}
+                        onChange={(e) =>
+                          trocarLinha(setLinhas, indice, {
+                            qty: Number(e.target.value.replace(/\D/g, '')) || 0,
+                          })
+                        }
+                      />
+                    </Campo>
+                  </>
+                )}
               </Grade>
+
+              <AlternadorDeModo
+                modo={linha.modo}
+                aoTrocar={(modo) => {
+                  const faixaMaisProxima =
+                    produto?.faixas.find((f) => f.qty >= linha.qty)?.qty ??
+                    produto?.faixas[0]?.qty ??
+                    20
+                  trocarLinha(setLinhas, indice, {
+                    modo,
+                    qty: modo === 'faixa' ? faixaMaisProxima : linha.qty,
+                  })
+                }}
+              />
 
               {produto?.camposDePersonalizacao.map((personalizacao) => (
                 <Campo key={personalizacao.rotulo} rotuloTexto={personalizacao.rotulo}>
@@ -408,6 +491,12 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
                 </Campo>
               ))}
 
+              {linha.modo === 'livre' && produto && linha.qty > 0 && (
+                <Conferencia
+                  avisos={avisosDaNegociacao(produto.config, linha.qty, centavosDe(linha.precoPorPeca))}
+                />
+              )}
+
               <div
                 style={{
                   display: 'flex',
@@ -416,7 +505,14 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
                   marginTop: '0.7rem',
                 }}
               >
-                <strong>{faixa ? brl(faixa.lotPrice) : '—'}</strong>
+                <div>
+                  <strong>{brl(totalDaLinha(linha, produto))}</strong>
+                  {linha.modo === 'livre' && linha.qty > 0 && (
+                    <span style={{ ...sutil, marginLeft: '0.5rem', fontSize: '0.9rem' }}>
+                      {linha.qty} × {linha.precoPorPeca || 'R$ 0,00'}
+                    </span>
+                  )}
+                </div>
                 {linhas.length > 1 && (
                   <button
                     type="button"
@@ -436,12 +532,7 @@ export function FormularioDeVenda({ produtos }: { produtos: ProdutoParaVenda[] }
           onClick={() =>
             setLinhas((atuais) => [
               ...atuais,
-              {
-                slug: produtos[0]?.slug ?? '',
-                aroma: '',
-                qty: produtos[0]?.faixas[0]?.qty ?? 20,
-                personalizacao: {},
-              },
+              linhaNova(produtos[0]),
             ])
           }
           style={{ ...botaoSecundario, marginTop: '0.8rem' }}
@@ -567,6 +658,70 @@ function trocarLinha(
   mudanca: Partial<LinhaDoPedido>,
 ) {
   setLinhas((atuais) => atuais.map((linha, i) => (i === indice ? { ...linha, ...mudanca } : linha)))
+}
+
+/**
+ * Faixa do site ou quantidade combinada.
+ *
+ * Fica discreto, embaixo da linha: o caso comum é a faixa, e a troca é um
+ * clique quando a conversa pediu 21 peças.
+ */
+function AlternadorDeModo({
+  modo,
+  aoTrocar,
+}: {
+  modo: 'faixa' | 'livre'
+  aoTrocar: (modo: 'faixa' | 'livre') => void
+}) {
+  return (
+    <div style={{ display: 'flex', gap: '0.4rem', marginTop: '-0.3rem', marginBottom: '0.3rem' }}>
+      {(
+        [
+          ['faixa', 'Faixa do site'],
+          ['livre', 'Quantidade combinada'],
+        ] as const
+      ).map(([valor, rotuloTexto]) => (
+        <button
+          key={valor}
+          type="button"
+          onClick={() => aoTrocar(valor)}
+          style={{
+            padding: '0.25rem 0.6rem',
+            borderRadius: 999,
+            border: '1px solid var(--theme-elevation-150)',
+            background: modo === valor ? 'var(--theme-elevation-100)' : 'transparent',
+            color: modo === valor ? 'var(--theme-elevation-800)' : 'var(--theme-elevation-500)',
+            fontSize: '0.8rem',
+            cursor: 'pointer',
+          }}
+        >
+          {rotuloTexto}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Avisos da venda combinada. Chamam atenção, não impedem. */
+function Conferencia({ avisos }: { avisos: string[] }) {
+  if (avisos.length === 0) return null
+
+  return (
+    <ul
+      style={{
+        margin: '0.6rem 0 0',
+        padding: '0.6rem 1rem 0.6rem 1.6rem',
+        border: '1px solid #e3c97a',
+        background: '#fff8e6',
+        borderRadius: 6,
+        fontSize: '0.88rem',
+      }}
+    >
+      {avisos.map((aviso) => (
+        <li key={aviso}>{aviso}</li>
+      ))}
+    </ul>
+  )
 }
 
 function Secao({ titulo, children }: { titulo: string; children: React.ReactNode }) {

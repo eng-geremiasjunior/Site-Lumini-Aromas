@@ -25,6 +25,11 @@ export type ItemDaVenda = {
   variantKey: string | null
   qty: number
   personalization: Record<string, string>
+  /**
+   * Preço por peça combinado na conversa, quando a quantidade não é uma das
+   * faixas do site. Só existe aqui: a vitrine nunca manda este campo.
+   */
+  precoPorPecaCentavos?: number | null
 }
 
 export type DadosDaVenda = {
@@ -86,6 +91,9 @@ export async function lancarVenda(dados: DadosDaVenda): Promise<ResultadoDaVenda
       qty: item.qty,
       personalization: item.personalization,
       addons: [],
+      negociado: item.precoPorPecaCentavos
+        ? { unitPriceCents: item.precoPorPecaCentavos }
+        : null,
     })
 
     if (!calculado.ok) return { ok: false, mensagem: calculado.message }

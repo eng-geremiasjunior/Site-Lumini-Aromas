@@ -11,7 +11,7 @@ import {
   DEFAULT_LOT_SIZES,
   addonsTotal,
   guardLot,
-  lotPrice,
+  guardNegociado,
   unitPriceFor,
   type Addon,
   type GuardErrorCode,
@@ -58,6 +58,13 @@ export type PriceLineInput = {
   addons?: PricingAddon[]
   /** Respostas dos campos de personalização, no formato { "Frase ou nome": "Ana e João" }. */
   personalization?: Record<string, string | null | undefined>
+  /**
+   * Venda negociada: preço por peça combinado na conversa, com quantidade
+   * livre. Só o painel manda isto — a vitrine nunca. É o que permite lançar
+   * as 21 ou 28 peças que se vendem no WhatsApp sem afrouxar a tabela de
+   * faixas fechadas que o site pratica.
+   */
+  negociado?: { unitPriceCents: number } | null
 }
 
 export type PricedLine = {
@@ -76,6 +83,8 @@ export type PricedLine = {
   addonsTotal: number
   /** Lote + acabamentos, em centavos. */
   total: number
+  /** A quantidade e o preço foram combinados, não vieram da tabela. */
+  negociado?: boolean
   personalization: Record<string, string>
 }
 
@@ -119,7 +128,12 @@ export function priceLine(input: PriceLineInput): PriceLineResult {
 
   const config = toPricingConfig(product)
 
-  const guard = guardLot(config, qty)
+  // Duas portas, nunca uma com exceção dentro: a da vitrine confere as
+  // faixas fechadas; a do painel aceita a quantidade combinada.
+  const guard = input.negociado
+    ? guardNegociado(qty, input.negociado.unitPriceCents)
+    : guardLot(config, qty)
+
   if (!guard.ok) return { ok: false, code: guard.code, message: guard.message }
 
   // Variação (aroma). Só é exigida quando o produto tem variações cadastradas.
@@ -193,7 +207,10 @@ export function priceLine(input: PriceLineInput): PriceLineResult {
   }))
 
   const addonsSum = addonsTotal(addons, qty)
-  const lot = lotPrice(config, qty)
+
+  // O total do lote nunca é digitado, nem aqui: é sempre quantidade × peça.
+  const precoDaPeca = input.negociado ? input.negociado.unitPriceCents : unitPriceFor(config, qty)
+  const lot = precoDaPeca * qty
 
   return {
     ok: true,
@@ -205,8 +222,9 @@ export function priceLine(input: PriceLineInput): PriceLineResult {
       variantLabel,
       sku,
       qty,
-      unitPrice: unitPriceFor(config, qty),
+      unitPrice: precoDaPeca,
       lotPrice: lot,
+      negociado: Boolean(input.negociado),
       addons: addonLines,
       addonsTotal: addonsSum,
       total: lot + addonsSum,

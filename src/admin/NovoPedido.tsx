@@ -4,6 +4,7 @@ import { Gutter } from '@payloadcms/ui'
 
 import { getPayloadClient } from '../lib/payload.ts'
 import { getProductBySlug } from '../commerce/catalog/get-product.ts'
+import { toPricingConfig } from '../commerce/cart/price-line.ts'
 import { FormularioDeVenda, type ProdutoParaVenda } from './FormularioDeVenda.tsx'
 
 /**
@@ -60,6 +61,7 @@ async function carregarProdutos(): Promise<ProdutoParaVenda[]> {
     produtos.push({
       slug: produto.slug,
       nome: produto.name,
+      config: toPricingConfig(produto.pricing),
       aromas: produto.variants.map((variante) => ({
         chave: variante.key,
         rotulo: variante.label,
