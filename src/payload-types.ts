@@ -79,6 +79,7 @@ export interface Config {
     orders: Order;
     carts: Cart;
     customers: Customer;
+    coupons: Coupon;
     'integration-events': IntegrationEvent;
     users: User;
     'payload-kv': PayloadKv;
@@ -99,6 +100,7 @@ export interface Config {
     orders: OrdersSelect<false> | OrdersSelect<true>;
     carts: CartsSelect<false> | CartsSelect<true>;
     customers: CustomersSelect<false> | CustomersSelect<true>;
+    coupons: CouponsSelect<false> | CouponsSelect<true>;
     'integration-events': IntegrationEventsSelect<false> | IntegrationEventsSelect<true>;
     users: UsersSelect<false> | UsersSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
@@ -898,11 +900,24 @@ export interface Cart {
   email?: string | null;
   phone?: string | null;
   /**
+   * Também capturado no checkout, para o lembrete falar com ela pelo nome.
+   */
+  customerName?: string | null;
+  /**
    * Preenchido quando o cliente entra na conta.
    */
   customer?: (number | null) | Customer;
   couponCode?: string | null;
   lastActivityAt?: string | null;
+  /**
+   * Vai no link do e-mail de lembrete e devolve o carrinho montado. É diferente do código da sessão de propósito: o que circula por e-mail não é o mesmo que identifica o navegador.
+   */
+  restoreToken?: string | null;
+  /**
+   * De zero a três.
+   */
+  recoveryStep?: number | null;
+  lastRecoveryAt?: string | null;
   convertedOrderNumber?: string | null;
   /**
    * De onde o cliente veio: campanha, anúncio ou acesso direto.
@@ -916,6 +931,67 @@ export interface Cart {
     | number
     | boolean
     | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Descontos combinados com clientes, parceiros e cerimonialistas.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons".
+ */
+export interface Coupon {
+  id: number;
+  /**
+   * O que a cliente digita no carrinho. Maiúsculas e minúsculas dão no mesmo.
+   */
+  codigo: string;
+  ativo?: boolean | null;
+  /**
+   * De quem é este cupom: a cerimonialista, a loja, a campanha.
+   */
+  parceiro?: string | null;
+  tipo: 'percentual' | 'valor' | 'frete_gratis';
+  /**
+   * Ex.: 10 para dez por cento.
+   */
+  percentual?: number | null;
+  valorCentavos?: number | null;
+  /**
+   * Deixe vazio para valer desde já.
+   */
+  validoDe?: string | null;
+  /**
+   * Deixe vazio para não expirar.
+   */
+  validoAte?: string | null;
+  /**
+   * Deixe vazio para valer em qualquer valor.
+   */
+  gastoMinimoCentavos?: number | null;
+  /**
+   * Vazio = sem limite.
+   */
+  usoMaximo?: number | null;
+  /**
+   * Vazio = sem limite.
+   */
+  usoMaximoPorCliente?: number | null;
+  produtos?: (number | Product)[] | null;
+  categorias?: (number | Category)[] | null;
+  /**
+   * Para um cupom de empresa, dá para liberar o domínio inteiro escrevendo *@empresa.com.br.
+   */
+  emailsPermitidos?:
+    | {
+        email: string;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Só para você: o que foi combinado, com quem e quando.
+   */
+  observacao?: string | null;
   updatedAt: string;
   createdAt: string;
 }
@@ -1061,6 +1137,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'customers';
         value: number | Customer;
+      } | null)
+    | ({
+        relationTo: 'coupons';
+        value: number | Coupon;
       } | null)
     | ({
         relationTo: 'integration-events';
@@ -1478,9 +1558,13 @@ export interface CartsSelect<T extends boolean = true> {
       };
   email?: T;
   phone?: T;
+  customerName?: T;
   customer?: T;
   couponCode?: T;
   lastActivityAt?: T;
+  restoreToken?: T;
+  recoveryStep?: T;
+  lastRecoveryAt?: T;
   convertedOrderNumber?: T;
   attribution?: T;
   updatedAt?: T;
@@ -1535,6 +1619,34 @@ export interface CustomersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "coupons_select".
+ */
+export interface CouponsSelect<T extends boolean = true> {
+  codigo?: T;
+  ativo?: T;
+  parceiro?: T;
+  tipo?: T;
+  percentual?: T;
+  valorCentavos?: T;
+  validoDe?: T;
+  validoAte?: T;
+  gastoMinimoCentavos?: T;
+  usoMaximo?: T;
+  usoMaximoPorCliente?: T;
+  produtos?: T;
+  categorias?: T;
+  emailsPermitidos?:
+    | T
+    | {
+        email?: T;
+        id?: T;
+      };
+  observacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -1,5 +1,7 @@
 import type { CollectionConfig } from 'payload'
 
+import { randomUUID } from 'node:crypto'
+
 import { admins } from '../../access/roles.ts'
 
 /**
@@ -96,6 +98,19 @@ export const Carts: CollectionConfig = {
       ],
     },
     {
+      name: 'customerName',
+      type: 'text',
+      label: 'Nome',
+      admin: {
+        description: 'Também capturado no checkout, para o lembrete falar com ela pelo nome.',
+      },
+    },
+    {
+      type: 'row',
+      fields: [
+      ],
+    },
+    {
       name: 'customer',
       type: 'relationship',
       relationTo: 'customers',
@@ -108,6 +123,37 @@ export const Carts: CollectionConfig = {
       type: 'date',
       label: 'Última atividade',
       admin: { position: 'sidebar', readOnly: true },
+    },
+    {
+      name: 'restoreToken',
+      type: 'text',
+      label: 'Código de retomada',
+      unique: true,
+      index: true,
+      admin: {
+        position: 'sidebar',
+        readOnly: true,
+        description:
+          'Vai no link do e-mail de lembrete e devolve o carrinho montado. É diferente do código da sessão de propósito: o que circula por e-mail não é o mesmo que identifica o navegador.',
+      },
+    },
+    {
+      type: 'row',
+      fields: [
+        {
+          name: 'recoveryStep',
+          type: 'number',
+          label: 'Lembretes enviados',
+          defaultValue: 0,
+          admin: { width: '50%', readOnly: true, description: 'De zero a três.' },
+        },
+        {
+          name: 'lastRecoveryAt',
+          type: 'date',
+          label: 'Último lembrete',
+          admin: { width: '50%', readOnly: true },
+        },
+      ],
     },
     {
       name: 'convertedOrderNumber',
@@ -127,8 +173,13 @@ export const Carts: CollectionConfig = {
   ],
   hooks: {
     beforeChange: [
-      ({ data }) => {
-        data.lastActivityAt = new Date().toISOString()
+      ({ data, operation }) => {
+        // Qualquer mexida no carrinho reinicia o relógio do abandono. A
+        // exceção é quando quem grava manda a data de propósito: é o que
+        // permite a varredura marcar o carrinho como abandonado sem, com
+        // isso, fingir que a cliente acabou de mexer nele.
+        if (!data.lastActivityAt) data.lastActivityAt = new Date().toISOString()
+        if (operation === 'create' && !data.restoreToken) data.restoreToken = randomUUID()
         return data
       },
     ],

@@ -27,7 +27,19 @@ export default async function CheckoutPage() {
         Falta pouco. Seus dados são usados apenas para entregar e emitir a nota.
       </p>
 
-      <Checkout subtotal={carrinho.subtotal} quantidadeDePecas={carrinho.totalPieces} />
+      <Checkout
+        subtotal={carrinho.subtotal}
+        quantidadeDePecas={carrinho.totalPieces}
+        cupom={
+          carrinho.cupom
+            ? {
+                codigo: carrinho.cupom.codigo,
+                desconto: carrinho.desconto,
+                freteGratis: carrinho.cupom.freteGratis,
+              }
+            : null
+        }
+      />
     </main>
   )
 }

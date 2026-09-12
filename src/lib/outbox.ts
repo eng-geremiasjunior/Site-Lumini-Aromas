@@ -7,6 +7,8 @@ import {
   type EventoASair,
 } from '../commerce/integrations/outbox.ts'
 import { montarEmail, type DadosDoEmail, type TipoDeEmail } from '../commerce/notifications/emails.ts'
+import { montarLembrete } from '../commerce/notifications/emails-carrinho.ts'
+import { resumoDoCarrinho } from '../commerce/cart/cart-view.ts'
 import { enviarEmail } from './enviar-email.ts'
 
 /**
@@ -151,7 +153,18 @@ async function entregarEmail(
   payload: Payload,
   dados: unknown,
 ): Promise<{ ok: true } | { ok: false; erro: string }> {
-  const { tipoDeEmail, numero } = (dados ?? {}) as { tipoDeEmail?: TipoDeEmail; numero?: string }
+  const entrada = (dados ?? {}) as {
+    tipoDeEmail?: TipoDeEmail | 'lembrete_carrinho'
+    numero?: string
+    carrinhoId?: number | string
+    passo?: number
+  }
+
+  if (entrada.tipoDeEmail === 'lembrete_carrinho') {
+    return entregarLembreteDeCarrinho(payload, entrada.carrinhoId, entrada.passo)
+  }
+
+  const { tipoDeEmail, numero } = entrada as { tipoDeEmail?: TipoDeEmail; numero?: string }
   if (!tipoDeEmail || !numero) return { ok: false, erro: 'Evento de e-mail sem tipo ou sem pedido.' }
 
   const { docs } = await payload.find({
@@ -222,4 +235,61 @@ function primeiroNome(nomeCompleto?: string | null): string {
 
 function soDigitos(texto?: string | null): string {
   return (texto ?? '').replace(/\D/g, '')
+}
+
+/**
+ * Lembrete de carrinho abandonado.
+ *
+ * O conteúdo é montado na hora do envio, e não na hora de enfileirar: se a
+ * cliente voltou e mexeu no carrinho nesse meio tempo, o e-mail sai com o
+ * que está lá agora — ou não sai, se ela já fechou o pedido.
+ */
+async function entregarLembreteDeCarrinho(
+  payload: Payload,
+  carrinhoId?: number | string,
+  passo?: number,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  if (!carrinhoId || !passo) return { ok: false, erro: 'Lembrete sem carrinho ou sem passo.' }
+
+  const doc = await payload
+    .findByID({ collection: 'carts', id: carrinhoId, depth: 0, overrideAccess: true })
+    .catch(() => null)
+
+  if (!doc) return { ok: false, erro: 'Este carrinho não existe mais.' }
+
+  // A cliente voltou e comprou, ou pediu para não receber mais: o lembrete
+  // perde o sentido. Marcar como entregue é o certo — não é falha.
+  if (doc.status !== 'active' && doc.status !== 'abandoned') return { ok: true }
+  if (!doc.email) return { ok: true }
+
+  const carrinho = await resumoDoCarrinho(doc.id)
+  if (!carrinho || carrinho.isEmpty) return { ok: true }
+
+  const loja = await payload.findGlobal({ slug: 'store-settings', depth: 0, overrideAccess: true })
+  const configuracoes = (loja ?? {}) as { whatsapp?: string | null; instagram?: string | null }
+
+  const conteudo = montarLembrete(passo, {
+    nome: primeiroNome(doc.customerName ?? null),
+    urlDaLoja: process.env.NEXT_PUBLIC_SERVER_URL ?? 'https://luminiaromas.com.br',
+    tokenDeRecuperacao: doc.restoreToken ?? '',
+    whatsapp: soDigitos(configuracoes.whatsapp) || '5533999478774',
+    itens: carrinho.lines.map((linha) => ({
+      descricao: [linha.productName, linha.variantLabel].filter(Boolean).join(' · '),
+      quantidade: linha.qty,
+    })),
+    subtotalCentavos: carrinho.subtotal,
+    instagram: configuracoes.instagram ?? null,
+  })
+
+  const resultado = await enviarEmail(doc.email, conteudo)
+  if (!resultado.ok) return resultado
+
+  await payload.update({
+    collection: 'carts',
+    id: doc.id,
+    overrideAccess: true,
+    data: { recoveryStep: passo, lastRecoveryAt: new Date().toISOString(), status: 'abandoned' },
+  })
+
+  return { ok: true }
 }

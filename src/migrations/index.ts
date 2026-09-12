@@ -4,6 +4,8 @@ import * as migration_20260911_190314_carrinho_e_clientes from './20260911_19031
 import * as migration_20260911_193654_pedidos from './20260911_193654_pedidos';
 import * as migration_20260911_224416_minha_conta from './20260911_224416_minha_conta';
 import * as migration_20260911_230255_caixa_de_saida from './20260911_230255_caixa_de_saida';
+import * as migration_20260911_233030_cupons from './20260911_233030_cupons';
+import * as migration_20260911_235830_carrinho_abandonado from './20260911_235830_carrinho_abandonado';
 
 export const migrations = [
   {
@@ -34,6 +36,16 @@ export const migrations = [
   {
     up: migration_20260911_230255_caixa_de_saida.up,
     down: migration_20260911_230255_caixa_de_saida.down,
-    name: '20260911_230255_caixa_de_saida'
+    name: '20260911_230255_caixa_de_saida',
+  },
+  {
+    up: migration_20260911_233030_cupons.up,
+    down: migration_20260911_233030_cupons.down,
+    name: '20260911_233030_cupons',
+  },
+  {
+    up: migration_20260911_235830_carrinho_abandonado.up,
+    down: migration_20260911_235830_carrinho_abandonado.down,
+    name: '20260911_235830_carrinho_abandonado'
   },
 ];

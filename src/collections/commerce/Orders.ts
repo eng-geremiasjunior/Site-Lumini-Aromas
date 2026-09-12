@@ -6,7 +6,6 @@ import { randomUUID } from 'node:crypto'
 
 import { ORDER_STATUS_OPTIONS, type OrderStatus } from '../../commerce/orders/statuses.ts'
 import { eventosDaTransicao } from '../../commerce/integrations/outbox.ts'
-import { enfileirar } from '../../lib/outbox.ts'
 
 /**
  * Pedido.
@@ -52,7 +51,14 @@ export const Orders: CollectionConfig = {
         const para = doc.status as OrderStatus
 
         const eventos = eventosDaTransicao({ numero: String(doc.number), de, para })
-        if (eventos.length > 0) await enfileirar(req.payload, eventos, doc.id, req)
+        if (eventos.length === 0) return doc
+
+        // Importado aqui dentro, e não no topo do arquivo, de propósito: a
+        // caixa de saída acaba chegando ao `payload.config`, e este arquivo
+        // é carregado *pelo* config. Importar no topo fecharia um ciclo que
+        // travava a geração de tipos e de migrações.
+        const { enfileirar } = await import('../../lib/outbox.ts')
+        await enfileirar(req.payload, eventos, doc.id, req)
 
         return doc
       },

@@ -4,8 +4,17 @@ import { randomUUID } from 'node:crypto'
 import { cookies } from 'next/headers'
 
 import { getPayloadClient } from '../../lib/payload.ts'
-import { priceLine, cartSubtotal, type PricedLine, type PricingAddon } from './price-line.ts'
+import { priceLine } from './price-line.ts'
 import { getProductBySlug } from '../catalog/get-product.ts'
+import {
+  buscarCarrinho,
+  carregarAcabamentos,
+  carregarProdutoPorId,
+  carrinhoVazio,
+  montarVisao,
+  type CartView,
+} from './cart-view.ts'
+import { validarCupom } from '../coupons/coupon-service.ts'
 
 const COOKIE = 'lumini_cart'
 const TRINTA_DIAS = 60 * 60 * 24 * 30
@@ -18,24 +27,11 @@ export type CartItemInput = {
   addonIds: string[]
 }
 
-export type CartLine = PricedLine & {
-  /** Posição do item no carrinho, usada para alterar ou remover. */
-  index: number
-  productSlug: string
-  imageUrl: string | null
-  addonIds: string[]
-}
+export type { CartLine, CartView } from './cart-view.ts'
 
-export type CartView = {
-  token: string
-  lines: CartLine[]
-  subtotal: number
-  /** Total de peças no carrinho, útil no aviso de pedido mínimo. */
-  totalPieces: number
-  isEmpty: boolean
-}
-
-export type CartResult = { ok: true; cart: CartView } | { ok: false; mensagem: string; campo?: string }
+export type CartResult =
+  | { ok: true; cart: CartView }
+  | { ok: false; mensagem: string; campo?: string }
 
 /**
  * Lê o código do carrinho do navegador, sem criar um novo.
@@ -63,110 +59,16 @@ async function garantirToken(): Promise<string> {
   return token
 }
 
-async function buscarCarrinho(token: string) {
-  const payload = await getPayloadClient()
-  const resultado = await payload.find({
-    collection: 'carts',
-    where: { token: { equals: token } },
-    limit: 1,
-    depth: 0,
-    overrideAccess: true,
-  })
-  return resultado.docs[0] ?? null
-}
-
-/** Acabamentos ativos, com o preço que está no banco neste momento. */
-async function carregarAcabamentos(ids: string[]): Promise<PricingAddon[]> {
-  if (ids.length === 0) return []
-
-  const payload = await getPayloadClient()
-  const resultado = await payload.find({
-    collection: 'addons',
-    where: { and: [{ id: { in: ids } }, { active: { equals: true } }] },
-    limit: 50,
-    depth: 0,
-    overrideAccess: true,
-  })
-
-  return resultado.docs.map((addon) => ({
-    id: String(addon.id),
-    name: addon.name,
-    pricePerUnit: addon.pricePerUnit ?? 0,
-    flatPrice: addon.flatPrice ?? 0,
-  }))
-}
-
-/**
- * Monta a visão do carrinho.
- *
- * O preço de cada linha é recalculado agora, a partir do produto, e não
- * lido de um valor guardado. Se o dono mudar o preço, o cliente vê o preço
- * novo antes de pagar, e nunca existe divergência entre o que aparece no
- * carrinho e o que será cobrado.
- */
+/** O carrinho desta sessão. */
 export async function getCart(): Promise<CartView> {
   const token = await lerToken()
-  if (!token) return { token: '', lines: [], subtotal: 0, totalPieces: 0, isEmpty: true }
+  if (!token) return carrinhoVazio('')
 
   const doc = await buscarCarrinho(token)
-  if (!doc) return { token, lines: [], subtotal: 0, totalPieces: 0, isEmpty: true }
+  if (!doc) return carrinhoVazio(token)
 
-  const itens = Array.isArray(doc.items) ? doc.items : []
-  const lines: CartLine[] = []
-
-  for (const [index, item] of itens.entries()) {
-    const produtoId = typeof item.product === 'object' ? item.product?.id : item.product
-    if (!produtoId) continue
-
-    const produto = await carregarProdutoPorId(String(produtoId))
-    if (!produto) continue // produto saiu do ar: a linha some do carrinho
-
-    const addonIds = Array.isArray(item.addonIds) ? (item.addonIds as string[]) : []
-    const addons = await carregarAcabamentos(addonIds)
-
-    const resultado = priceLine({
-      product: produto.pricing,
-      variantKey: item.variantKey ?? null,
-      qty: item.qty,
-      personalization: (item.personalization as Record<string, string>) ?? {},
-      addons,
-    })
-
-    // Linha que deixou de ser válida (produto arquivado, aroma desativado)
-    // simplesmente não aparece; o cliente não é levado ao pagamento com ela.
-    if (!resultado.ok) continue
-
-    lines.push({
-      ...resultado.line,
-      index,
-      productSlug: produto.slug,
-      imageUrl: produto.images[0]?.url ?? null,
-      addonIds,
-    })
-  }
-
-  return {
-    token,
-    lines,
-    subtotal: cartSubtotal(lines),
-    totalPieces: lines.reduce((soma, linha) => soma + linha.qty, 0),
-    isEmpty: lines.length === 0,
-  }
+  return montarVisao(doc, token)
 }
-
-async function carregarProdutoPorId(id: string) {
-  const payload = await getPayloadClient()
-  const doc = await payload.findByID({
-    collection: 'products',
-    id,
-    depth: 1,
-    overrideAccess: true,
-  }).catch(() => null)
-
-  if (!doc || doc._status !== 'published' || doc.archived) return null
-  return getProductBySlug(doc.slug ?? '')
-}
-
 /**
  * Adiciona um item.
  *
@@ -289,7 +191,7 @@ export async function removeCartItem(index: number): Promise<CartResult> {
 }
 
 /** Guarda o contato assim que o cliente informa, para recuperar o carrinho depois. */
-export async function saveCartContact(email: string, phone?: string): Promise<void> {
+export async function saveCartContact(email: string, phone?: string, nome?: string): Promise<void> {
   const token = await lerToken()
   if (!token) return
 
@@ -300,7 +202,68 @@ export async function saveCartContact(email: string, phone?: string): Promise<vo
   await payload.update({
     collection: 'carts',
     id: doc.id,
-    data: { email, ...(phone ? { phone } : {}) },
+    data: { email, ...(phone ? { phone } : {}), ...(nome ? { customerName: nome } : {}) },
     overrideAccess: true,
   })
+}
+
+/**
+ * Aplica um cupom ao carrinho.
+ *
+ * Guarda só o código. O desconto é recalculado a cada leitura do carrinho,
+ * pela mesma razão que o preço do lote nunca é gravado: um valor guardado
+ * envelhece, e aí a tela mostra um número e a cobrança faz outro.
+ */
+export async function aplicarCupomNoCarrinho(
+  codigo: string,
+): Promise<{ ok: true; cart: CartView } | { ok: false; mensagem: string }> {
+  const carrinho = await getCart()
+
+  if (carrinho.isEmpty) {
+    return { ok: false, mensagem: 'Coloque alguma coisa no carrinho antes de usar o cupom.' }
+  }
+
+  const token = await lerToken()
+  const doc = token ? await buscarCarrinho(token) : null
+  if (!doc) return { ok: false, mensagem: 'Seu carrinho expirou. Monte de novo, é rapidinho.' }
+
+  const resultado = await validarCupom(codigo, {
+    linhas: carrinho.lines.map((linha) => ({
+      produtoId: linha.productId,
+      categoriaId: linha.categoryId,
+      total: linha.total,
+    })),
+    subtotal: carrinho.subtotal,
+    email: doc.email,
+  })
+
+  if (!resultado.ok) return { ok: false, mensagem: resultado.motivo }
+
+  const payload = await getPayloadClient()
+  await payload.update({
+    collection: 'carts',
+    id: doc.id,
+    data: { couponCode: resultado.cupom.codigo },
+    overrideAccess: true,
+  })
+
+  return { ok: true, cart: await getCart() }
+}
+
+/** Tira o cupom do carrinho. */
+export async function removerCupomDoCarrinho(): Promise<CartView> {
+  const token = await lerToken()
+  const doc = token ? await buscarCarrinho(token) : null
+
+  if (doc) {
+    const payload = await getPayloadClient()
+    await payload.update({
+      collection: 'carts',
+      id: doc.id,
+      data: { couponCode: null },
+      overrideAccess: true,
+    })
+  }
+
+  return getCart()
 }

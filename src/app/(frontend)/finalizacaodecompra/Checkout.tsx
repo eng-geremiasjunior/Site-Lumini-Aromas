@@ -24,9 +24,11 @@ function formatarData(iso: string): string {
 type Props = {
   subtotal: number
   quantidadeDePecas: number
+  /** Cupom já conferido no servidor; o navegador nunca calcula desconto. */
+  cupom: { codigo: string; desconto: number; freteGratis: boolean } | null
 }
 
-export function Checkout({ subtotal, quantidadeDePecas }: Props) {
+export function Checkout({ subtotal, quantidadeDePecas, cupom }: Props) {
   const router = useRouter()
 
   const [nome, setNome] = useState('')
@@ -64,7 +66,9 @@ export function Checkout({ subtotal, quantidadeDePecas }: Props) {
       ? frete.opcoes.find((opcao) => opcao.serviceId === freteEscolhido)
       : null
 
-  const total = subtotal + (opcaoFrete?.priceCents ?? 0)
+  const freteCobrado = cupom?.freteGratis ? 0 : (opcaoFrete?.priceCents ?? 0)
+  const desconto = cupom?.desconto ?? 0
+  const total = Math.max(0, subtotal - desconto + freteCobrado)
 
   function aoSairDoCep() {
     const digitos = cep.replace(/\D/g, '')
@@ -135,7 +139,7 @@ export function Checkout({ subtotal, quantidadeDePecas }: Props) {
                 style={estiloCampo}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                onBlur={() => void salvarContato(email, telefone)}
+                onBlur={() => void salvarContato(email, telefone, nome)}
               />
             </Campo>
 
@@ -372,16 +376,21 @@ export function Checkout({ subtotal, quantidadeDePecas }: Props) {
 
         <dl style={{ display: 'grid', gap: '0.45rem', margin: 0 }}>
           <Linha rotulo={`Produtos (${quantidadeDePecas} peças)`} valor={brl(subtotal)} />
+          {cupom && desconto > 0 && (
+            <Linha rotulo={`Cupom ${cupom.codigo}`} valor={`− ${brl(desconto)}`} />
+          )}
           <Linha
             rotulo="Frete"
             valor={
               !opcaoFrete
                 ? '—'
-                : opcaoFrete.serviceId === FRETE_A_COMBINAR_ID
-                  ? 'A combinar'
-                  : opcaoFrete.priceCents === 0
-                    ? 'Grátis'
-                    : brl(opcaoFrete.priceCents)
+                : cupom?.freteGratis
+                  ? 'Grátis com o cupom'
+                  : opcaoFrete.serviceId === FRETE_A_COMBINAR_ID
+                    ? 'A combinar'
+                    : opcaoFrete.priceCents === 0
+                      ? 'Grátis'
+                      : brl(opcaoFrete.priceCents)
             }
           />
         </dl>

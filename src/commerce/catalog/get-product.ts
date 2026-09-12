@@ -8,6 +8,8 @@ export type ProductView = {
   id: string
   name: string
   slug: string
+  /** Categoria, usada pelo cupom restrito a uma linha de produtos. */
+  categoryId: string | null
   shortDescription: string | null
   description: unknown
   images: Array<{ url: string; alt: string; width?: number | null; height?: number | null }>
@@ -115,6 +117,7 @@ export async function getProductBySlug(slug: string): Promise<ProductView | null
     id: String(doc.id),
     name: doc.name,
     slug: doc.slug ?? slug,
+    categoryId: idDoRelacionamento(doc.category),
     shortDescription: doc.shortDescription ?? null,
     description: doc.description ?? null,
     images: (Array.isArray(doc.gallery) ? doc.gallery : [])
@@ -212,4 +215,14 @@ export async function listPublishedProducts(limit = 100) {
   })
 
   return resultado.docs
+}
+
+/** O relacionamento volta como id ou como documento, conforme a profundidade. */
+function idDoRelacionamento(valor: unknown): string | null {
+  if (valor === null || valor === undefined) return null
+  if (typeof valor === 'object') {
+    const doc = valor as { id?: string | number }
+    return doc.id === undefined ? null : String(doc.id)
+  }
+  return String(valor)
 }

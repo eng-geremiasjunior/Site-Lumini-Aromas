@@ -57,9 +57,9 @@ export async function calcularFreteCheckout(cep: string): Promise<FreteResultado
  * É o que permite recuperar o carrinho depois: sem o e-mail, um checkout
  * abandonado vira um visitante anônimo e a venda se perde sem rastro.
  */
-export async function salvarContato(email: string, telefone?: string): Promise<void> {
+export async function salvarContato(email: string, telefone?: string, nome?: string): Promise<void> {
   if (!email.includes('@')) return
-  await saveCartContact(email, telefone)
+  await saveCartContact(email, telefone, nome)
 }
 
 export async function finalizarPedido(dados: DadosDoPedido): Promise<ResultadoPedido> {

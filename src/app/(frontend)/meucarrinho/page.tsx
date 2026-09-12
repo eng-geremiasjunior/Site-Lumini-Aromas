@@ -3,6 +3,7 @@ import type { Metadata } from 'next'
 import { getCart } from '../../../commerce/cart/cart-service.ts'
 import { getProductBySlug } from '../../../commerce/catalog/get-product.ts'
 import { CalculoDeFrete } from './CalculoDeFrete.tsx'
+import { Cupom } from './Cupom.tsx'
 import { ItensDoCarrinho } from './ItensDoCarrinho.tsx'
 
 export const metadata: Metadata = {
@@ -75,9 +76,11 @@ export default async function CarrinhoPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
               <span style={{ color: 'var(--lumini-ink-soft)' }}>Subtotal</span>
               <strong style={{ fontSize: '1.5rem', fontFamily: 'var(--lumini-font-display)' }}>
-                {brl(carrinho.subtotal)}
+                {brl(carrinho.subtotal - carrinho.desconto)}
               </strong>
             </div>
+
+            <Cupom codigoAtual={carrinho.cupom?.codigo ?? null} desconto={carrinho.desconto} />
 
             <a
               href="/finalizacaodecompra/"

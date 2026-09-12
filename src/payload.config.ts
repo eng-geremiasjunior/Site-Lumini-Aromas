@@ -15,6 +15,7 @@ import { Attributes, AttributeTerms } from './collections/catalog/Attributes.ts'
 import { Products } from './collections/catalog/Products.ts'
 import { Categories, Occasions, Tags } from './collections/catalog/Taxonomies.ts'
 import { Carts } from './collections/commerce/Carts.ts'
+import { Coupons } from './collections/commerce/Coupons.ts'
 import { Customers } from './collections/commerce/Customers.ts'
 import { IntegrationEvents } from './collections/commerce/IntegrationEvents.ts'
 import { Orders } from './collections/commerce/Orders.ts'
@@ -79,6 +80,7 @@ export default buildConfig({
     Orders,
     Carts,
     Customers,
+    Coupons,
     IntegrationEvents,
     // Configurações
     Users,

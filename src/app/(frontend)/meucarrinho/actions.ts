@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 
 import {
   addToCart,
+  aplicarCupomNoCarrinho,
+  removerCupomDoCarrinho,
   removeCartItem,
   updateCartItemQty,
   type CartItemInput,
@@ -48,4 +50,28 @@ export async function removerItem(index: number): Promise<CartResult> {
  */
 export async function calcularFrete(cep: string): Promise<FreteResultado> {
   return cotarFreteDoCarrinho(cep)
+}
+
+/**
+ * Aplica ou tira o cupom.
+ *
+ * Quem valida é o servidor, e revalida a cada leitura do carrinho: um cupom
+ * que expira entre o carrinho e o pagamento simplesmente deixa de valer,
+ * sem a cliente descobrir isso só na cobrança.
+ */
+export async function aplicarCupom(
+  codigo: string,
+): Promise<{ ok: true } | { ok: false; mensagem: string }> {
+  const resultado = await aplicarCupomNoCarrinho(codigo)
+  if (!resultado.ok) return resultado
+
+  revalidatePath('/meucarrinho')
+  revalidatePath('/finalizacaodecompra')
+  return { ok: true }
+}
+
+export async function removerCupom(): Promise<void> {
+  await removerCupomDoCarrinho()
+  revalidatePath('/meucarrinho')
+  revalidatePath('/finalizacaodecompra')
 }

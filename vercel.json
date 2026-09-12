@@ -5,6 +5,10 @@
     {
       "path": "/tarefas/caixa-de-saida",
       "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/tarefas/carrinhos-abandonados",
+      "schedule": "0 * * * *"
     }
   ]
 }

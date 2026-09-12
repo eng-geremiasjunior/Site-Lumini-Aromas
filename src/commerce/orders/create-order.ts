@@ -4,6 +4,7 @@ import { getPayloadClient } from '../../lib/payload.ts'
 import { getCart } from '../cart/cart-service.ts'
 import { cotarFreteDoCarrinho, FRETE_A_COMBINAR_ID } from '../shipping/quote-cart.ts'
 import { formatIsoDate, addBusinessDays } from '../shipping/business-days.ts'
+import { totalComCupom } from '../coupons/coupon.ts'
 
 /**
  * Criação do pedido.
@@ -161,7 +162,10 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
     }),
   )
 
-  const total = carrinho.subtotal + freteEscolhido.priceCents
+  // O cupom é revalidado aqui, no servidor, junto com o preço e o frete.
+  // O navegador não manda desconto: manda, no máximo, um código.
+  const totais = totalComCupom(carrinho.subtotal, freteEscolhido.priceCents, carrinho.cupom)
+  const total = totais.total
   const numero = await proximoNumero()
   const agora = new Date().toISOString()
 
@@ -198,8 +202,9 @@ export async function criarPedido(dados: DadosDoPedido): Promise<ResultadoPedido
       productionDeadline: prazo,
       customerNote: dados.observacao,
       subtotal: carrinho.subtotal,
-      shippingTotal: freteEscolhido.priceCents,
-      discountTotal: 0,
+      shippingTotal: totais.frete,
+      discountTotal: totais.desconto,
+      couponCode: carrinho.cupom?.codigo ?? null,
       total,
       events: [
         {
