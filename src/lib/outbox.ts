@@ -9,6 +9,10 @@ import {
 import { montarEmail, type DadosDoEmail, type TipoDeEmail } from '../commerce/notifications/emails.ts'
 import { montarLembrete } from '../commerce/notifications/emails-carrinho.ts'
 import { resumoDoCarrinho } from '../commerce/cart/cart-view.ts'
+import {
+  montarEmailDeConfirmacaoDoCartao,
+  montarEmailDoCartao,
+} from '../commerce/notifications/email-cartao.ts'
 import { enviarEmail } from './enviar-email.ts'
 
 /**
@@ -58,6 +62,9 @@ export async function enfileirar(
           payload: evento.payload,
           order: orderId ?? null,
           tentativas: 0,
+          // Evento com data marcada nasce esperando: a fila só o pega
+          // quando a hora chegar.
+          proximaTentativaEm: evento.agendadoPara ?? null,
         },
       })
     } catch (erro) {
@@ -143,6 +150,7 @@ async function entregar(
   evento: { tipo: string; payload?: unknown },
 ): Promise<{ ok: true } | { ok: false; erro: string }> {
   if (evento.tipo === 'email') return entregarEmail(payload, evento.payload)
+  if (evento.tipo === 'cartao_presente') return emitirCartaoPresente(payload, evento.payload)
 
   // Meta, GA4, Google Ads e DRE entram aqui quando tiverem credencial.
   // Até lá o evento fica na fila, visível, em vez de sumir.
@@ -289,6 +297,98 @@ async function entregarLembreteDeCarrinho(
     id: doc.id,
     overrideAccess: true,
     data: { recoveryStep: passo, lastRecoveryAt: new Date().toISOString(), status: 'abandoned' },
+  })
+
+  return { ok: true }
+}
+
+/**
+ * Emite o cartão-presente comprado num pedido.
+ *
+ * Acontece depois do pagamento e uma vez só — a chave de deduplicação
+ * garante isso, e um cartão a mais pelo mesmo pedido seria dinheiro dado.
+ *
+ * Só aqui o dinheiro vira saldo de alguém. Antes disso o pedido guardava
+ * apenas a intenção de compra.
+ */
+async function emitirCartaoPresente(
+  payload: Payload,
+  dados: unknown,
+): Promise<{ ok: true } | { ok: false; erro: string }> {
+  const { numero } = (dados ?? {}) as { numero?: string }
+  if (!numero) return { ok: false, erro: 'Evento de cartão sem pedido.' }
+
+  const { docs } = await payload.find({
+    collection: 'orders',
+    where: { number: { equals: numero } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+  })
+
+  const pedido = docs[0]
+  if (!pedido) return { ok: false, erro: `Pedido ${numero} não existe mais.` }
+
+  const aEmitir = pedido.cartaoPresenteAEmitir as
+    | {
+        valorCentavos?: number | null
+        de?: string | null
+        para?: string | null
+        emailDoDestinatario?: string | null
+        mensagem?: string | null
+        emitido?: boolean | null
+      }
+    | undefined
+
+  if (!aEmitir?.valorCentavos) return { ok: false, erro: `Pedido ${numero} não tem cartão a emitir.` }
+  if (aEmitir.emitido) return { ok: true }
+
+  const cartao = await payload.create({
+    collection: 'gift-cards',
+    overrideAccess: true,
+    data: {
+      situacao: 'ativo',
+      valorCentavos: aEmitir.valorCentavos,
+      de: aEmitir.de ?? null,
+      para: aEmitir.para ?? null,
+      mensagem: aEmitir.mensagem ?? null,
+      emailDoComprador: pedido.email ?? null,
+      emailDoDestinatario: aEmitir.emailDoDestinatario ?? null,
+      pedidoDeCompra: pedido.id,
+      enviadoEm: new Date().toISOString(),
+    },
+  })
+
+  const loja = await payload.findGlobal({ slug: 'store-settings', depth: 0, overrideAccess: true })
+  const configuracoes = (loja ?? {}) as { whatsapp?: string | null }
+
+  const comum = {
+    codigo: cartao.codigo ?? '',
+    valorCentavos: aEmitir.valorCentavos,
+    de: aEmitir.de ?? null,
+    para: aEmitir.para ?? null,
+    mensagem: aEmitir.mensagem ?? null,
+    validoAte: cartao.validoAte ?? null,
+    urlDaLoja: process.env.NEXT_PUBLIC_SERVER_URL ?? 'https://luminiaromas.com.br',
+    whatsapp: soDigitos(configuracoes.whatsapp) || '5533999478774',
+  }
+
+  // Quem recebe abre primeiro; quem comprou recebe a confirmação com o
+  // código, caso prefira entregar em mãos.
+  if (aEmitir.emailDoDestinatario) {
+    const entrega = await enviarEmail(aEmitir.emailDoDestinatario, montarEmailDoCartao(comum))
+    if (!entrega.ok) return entrega
+  }
+
+  if (pedido.email) {
+    await enviarEmail(pedido.email, montarEmailDeConfirmacaoDoCartao(comum))
+  }
+
+  await payload.update({
+    collection: 'orders',
+    id: pedido.id,
+    overrideAccess: true,
+    data: { cartaoPresenteAEmitir: { ...aEmitir, emitido: true } },
   })
 
   return { ok: true }

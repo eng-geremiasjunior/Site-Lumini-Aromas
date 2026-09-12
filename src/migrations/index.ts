@@ -10,6 +10,7 @@ import * as migration_20260912_043707_comprovante from './20260912_043707_compro
 import * as migration_20260912_051512_eventos from './20260912_051512_eventos';
 import * as migration_20260912_132549_presente from './20260912_132549_presente';
 import * as migration_20260912_153854_cartao_presente from './20260912_153854_cartao_presente';
+import * as migration_20260912_155235_cartao_no_pedido from './20260912_155235_cartao_no_pedido';
 
 export const migrations = [
   {
@@ -70,6 +71,11 @@ export const migrations = [
   {
     up: migration_20260912_153854_cartao_presente.up,
     down: migration_20260912_153854_cartao_presente.down,
-    name: '20260912_153854_cartao_presente'
+    name: '20260912_153854_cartao_presente',
+  },
+  {
+    up: migration_20260912_155235_cartao_no_pedido.up,
+    down: migration_20260912_155235_cartao_no_pedido.down,
+    name: '20260912_155235_cartao_no_pedido'
   },
 ];

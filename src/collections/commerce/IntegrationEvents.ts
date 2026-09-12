@@ -37,6 +37,7 @@ export const IntegrationEvents: CollectionConfig = {
       required: true,
       options: [
         { label: 'E-mail para o cliente', value: 'email' },
+        { label: 'Emissão de cartão-presente', value: 'cartao_presente' },
         { label: 'Conversão para a Meta', value: 'meta_capi' },
         { label: 'Evento para o Google Analytics', value: 'ga4' },
         { label: 'Conversão para o Google Ads', value: 'google_ads' },

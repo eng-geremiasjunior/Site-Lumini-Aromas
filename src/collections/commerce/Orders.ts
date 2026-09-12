@@ -50,7 +50,17 @@ export const Orders: CollectionConfig = {
         const de = operation === 'create' ? null : (previousDoc?.status as OrderStatus | undefined)
         const para = doc.status as OrderStatus
 
-        const eventos = eventosDaTransicao({ numero: String(doc.number), de, para })
+        const aEmitir = doc.cartaoPresenteAEmitir as
+          | { valorCentavos?: number | null; enviarEm?: string | null; emitido?: boolean | null }
+          | undefined
+
+        const eventos = eventosDaTransicao({
+          numero: String(doc.number),
+          de,
+          para,
+          temCartaoAEmitir: Boolean(aEmitir?.valorCentavos && !aEmitir.emitido),
+          cartaoAgendadoPara: aEmitir?.enviarEm ?? null,
+        })
         if (eventos.length === 0) return doc
 
         // Importado aqui dentro, e não no topo do arquivo, de propósito: a
@@ -396,6 +406,44 @@ export const Orders: CollectionConfig = {
               name: 'customerNote',
               type: 'textarea',
               label: 'Observação do cliente',
+            },
+            {
+              name: 'cartaoPresenteAEmitir',
+              type: 'group',
+              label: 'Cartão-presente comprado neste pedido',
+              admin: {
+                description:
+                  'O cartão só é criado quando o pagamento entra. Até lá isto é só a intenção de compra.',
+              },
+              fields: [
+                money({ name: 'valorCentavos', label: 'Valor' }),
+                {
+                  type: 'row',
+                  fields: [
+                    { name: 'de', type: 'text', label: 'De parte de', admin: { width: '50%' } },
+                    { name: 'para', type: 'text', label: 'Para', admin: { width: '50%' } },
+                  ],
+                },
+                {
+                  name: 'emailDoDestinatario',
+                  type: 'email',
+                  label: 'E-mail de quem recebe',
+                },
+                { name: 'mensagem', type: 'textarea', label: 'Recado' },
+                {
+                  name: 'enviarEm',
+                  type: 'date',
+                  label: 'Enviar em',
+                  admin: { description: 'Vazio = assim que o pagamento for confirmado.' },
+                },
+                {
+                  name: 'emitido',
+                  type: 'checkbox',
+                  label: 'Já foi emitido',
+                  defaultValue: false,
+                  admin: { readOnly: true },
+                },
+              ],
             },
             {
               name: 'presente',

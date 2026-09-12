@@ -17,15 +17,28 @@
  * quando tentar de novo. Quem fala com o mundo é `src/lib/outbox.ts`.
  */
 
-import type { OrderStatus } from '../orders/statuses.ts'
+import { ORDER_STATUSES, type OrderStatus } from '../orders/statuses.ts'
 import type { TipoDeEmail } from '../notifications/emails.ts'
 
-export type TipoDeEvento = 'email' | 'meta_capi' | 'ga4' | 'google_ads' | 'whatsapp' | 'dre'
+export type TipoDeEvento =
+  | 'email'
+  | 'cartao_presente'
+  | 'meta_capi'
+  | 'ga4'
+  | 'google_ads'
+  | 'whatsapp'
+  | 'dre'
 
 export type SituacaoDoEvento = 'pendente' | 'enviado' | 'falhou' | 'desistiu'
 
 export type EventoASair = {
   tipo: TipoDeEvento
+  /**
+   * Quando este efeito deve sair, se não for agora. É o que permite a
+   * cliente comprar o cartão hoje e ele chegar na caixa de entrada de quem
+   * recebe no dia do aniversário.
+   */
+  agendadoPara?: string | null
   /**
    * Identidade do efeito. Duas tentativas com a mesma chave são o mesmo
    * efeito, e o segundo não sai. É o que impede a cliente de receber
@@ -38,6 +51,10 @@ export type EventoASair = {
 
 export type ContextoDoPedido = {
   numero: string
+  /** O pedido tem um cartão-presente a emitir quando for pago. */
+  temCartaoAEmitir?: boolean
+  /** Data marcada para o cartão chegar. ISO. */
+  cartaoAgendadoPara?: string | null
   /** A situação anterior. Ausente quando o pedido acabou de ser criado. */
   de?: OrderStatus | null
   para: OrderStatus
@@ -56,16 +73,30 @@ export function eventosDaTransicao(contexto: ContextoDoPedido): EventoASair[] {
   // Nada a fazer quando a situação não mudou de verdade.
   if (de === para) return []
 
-  const email = EMAIL_POR_SITUACAO[para]
-  if (!email) return []
+  const saida: EventoASair[] = []
 
-  return [
-    {
+  const email = EMAIL_POR_SITUACAO[para]
+  if (email) {
+    saida.push({
       tipo: 'email',
       dedupeKey: `email:${email}:${numero}`,
       payload: { tipoDeEmail: email, numero },
-    },
-  ]
+    })
+  }
+
+  // O cartão-presente só nasce quando o dinheiro entra. Antes disso não
+  // existe cartão nenhum para ninguém gastar, e pedido que nunca foi pago
+  // não deixa vale solto no sistema.
+  if (contexto.temCartaoAEmitir && ORDER_STATUSES[para]?.isPaid) {
+    saida.push({
+      tipo: 'cartao_presente',
+      dedupeKey: `cartao:${numero}`,
+      payload: { numero },
+      agendadoPara: contexto.cartaoAgendadoPara ?? null,
+    })
+  }
+
+  return saida
 }
 
 const EMAIL_POR_SITUACAO: Partial<Record<OrderStatus, TipoDeEmail>> = {

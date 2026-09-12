@@ -134,3 +134,70 @@ describe('estaNaVez', () => {
     assert.equal(estaNaVez({ situacao: 'desistiu', proximaTentativaEm: null }, agora), false)
   })
 })
+
+describe('cartão-presente na caixa de saída', () => {
+  it('não emite nada enquanto o pedido não é pago', () => {
+    const eventos = eventosDaTransicao({
+      numero: '5012',
+      de: null,
+      para: 'pending',
+      temCartaoAEmitir: true,
+    })
+
+    assert.ok(!eventos.some((evento) => evento.tipo === 'cartao_presente'))
+  })
+
+  it('emite quando o dinheiro entra', () => {
+    const eventos = eventosDaTransicao({
+      numero: '5012',
+      de: 'pending',
+      para: 'processing',
+      temCartaoAEmitir: true,
+    })
+
+    const cartao = eventos.find((evento) => evento.tipo === 'cartao_presente')
+    assert.ok(cartao)
+    assert.equal(cartao.dedupeKey, 'cartao:5012')
+  })
+
+  it('leva a data marcada, para chegar no dia certo', () => {
+    const eventos = eventosDaTransicao({
+      numero: '5012',
+      de: 'pending',
+      para: 'processing',
+      temCartaoAEmitir: true,
+      cartaoAgendadoPara: '2026-12-25T09:00:00.000Z',
+    })
+
+    const cartao = eventos.find((evento) => evento.tipo === 'cartao_presente')
+    assert.equal(cartao?.agendadoPara, '2026-12-25T09:00:00.000Z')
+  })
+
+  it('sai uma vez só, mesmo se o pedido voltar a ser pago', () => {
+    // O webhook do Mercado Pago repete. Dois cartões pelo mesmo pedido
+    // seria dinheiro dado de graça.
+    const primeiro = eventosDaTransicao({
+      numero: '5012',
+      de: 'pending',
+      para: 'processing',
+      temCartaoAEmitir: true,
+    })
+    const segundo = eventosDaTransicao({
+      numero: '5012',
+      de: 'cancelled',
+      para: 'processing',
+      temCartaoAEmitir: true,
+    })
+
+    assert.equal(
+      primeiro.find((e) => e.tipo === 'cartao_presente')?.dedupeKey,
+      segundo.find((e) => e.tipo === 'cartao_presente')?.dedupeKey,
+    )
+  })
+
+  it('pedido sem cartão continua só com o e-mail', () => {
+    const eventos = eventosDaTransicao({ numero: '5012', de: 'pending', para: 'processing' })
+    assert.equal(eventos.length, 1)
+    assert.equal(eventos[0].tipo, 'email')
+  })
+})

@@ -764,6 +764,21 @@ export interface Order {
   dateCompleted?: string | null;
   customerNote?: string | null;
   /**
+   * O cartão só é criado quando o pagamento entra. Até lá isto é só a intenção de compra.
+   */
+  cartaoPresenteAEmitir?: {
+    valorCentavos?: number | null;
+    de?: string | null;
+    para?: string | null;
+    emailDoDestinatario?: string | null;
+    mensagem?: string | null;
+    /**
+     * Vazio = assim que o pagamento for confirmado.
+     */
+    enviarEm?: string | null;
+    emitido?: boolean | null;
+  };
+  /**
    * Quando é presente, três coisas mudam na embalagem: vai o cartão dentro, nenhum preço aparece no pacote, e a etiqueta sai no nome de quem recebe.
    */
   presente?: {
@@ -1138,7 +1153,7 @@ export interface GiftCard {
  */
 export interface IntegrationEvent {
   id: number;
-  tipo: 'email' | 'meta_capi' | 'ga4' | 'google_ads' | 'whatsapp' | 'dre';
+  tipo: 'email' | 'cartao_presente' | 'meta_capi' | 'ga4' | 'google_ads' | 'whatsapp' | 'dre';
   situacao: 'pendente' | 'enviado' | 'falhou' | 'desistiu';
   order?: (number | null) | Order;
   /**
@@ -1661,6 +1676,17 @@ export interface OrdersSelect<T extends boolean = true> {
   dateShipped?: T;
   dateCompleted?: T;
   customerNote?: T;
+  cartaoPresenteAEmitir?:
+    | T
+    | {
+        valorCentavos?: T;
+        de?: T;
+        para?: T;
+        emailDoDestinatario?: T;
+        mensagem?: T;
+        enviarEm?: T;
+        emitido?: T;
+      };
   presente?:
     | T
     | {
