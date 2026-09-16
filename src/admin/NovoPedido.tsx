@@ -3,9 +3,10 @@ import { DefaultTemplate } from '@payloadcms/next/templates'
 import { Gutter } from '@payloadcms/ui'
 
 import { getPayloadClient } from '../lib/payload.ts'
-import { getProductBySlug } from '../commerce/catalog/get-product.ts'
 import { toPricingConfig } from '../commerce/cart/price-line.ts'
 import { FormularioDeVenda, type ProdutoParaVenda } from './FormularioDeVenda.tsx'
+
+type LinhaDaTabela = { qty: number; lotPrice: number; unitPrice: number }
 
 /**
  * Novo pedido.
@@ -39,42 +40,68 @@ export async function NovoPedido(props: AdminViewServerProps) {
   )
 }
 
+/**
+ * Os produtos que podem ser vendidos à mão.
+ *
+ * Inclui rascunho de propósito. Um produto recém-importado do site antigo
+ * ainda não foi conferido para ir à vitrine, mas continua sendo vendido no
+ * WhatsApp todo dia — e obrigar a publicar 19 produtos sem revisar, só para
+ * registrar uma venda que já aconteceu, seria trocar um cuidado real por
+ * uma pressa maior. Quem é rascunho aparece marcado.
+ */
 async function carregarProdutos(): Promise<ProdutoParaVenda[]> {
   const payload = await getPayloadClient()
 
   const { docs } = await payload.find({
     collection: 'products',
-    where: { and: [{ _status: { equals: 'published' } }, { archived: { not_equals: true } }] },
-    limit: 100,
+    where: { archived: { not_equals: true } },
+    limit: 200,
     depth: 0,
     sort: 'name',
+    draft: true,
     overrideAccess: true,
   })
 
   const produtos: ProdutoParaVenda[] = []
 
   for (const doc of docs) {
-    if (!doc.slug) continue
-    const produto = await getProductBySlug(doc.slug)
-    if (!produto) continue
+    if (!doc.slug || !doc.unitPrice) continue
+
+    const config = toPricingConfig({
+      id: doc.id,
+      name: doc.name,
+      slug: doc.slug,
+      status: 'published',
+      archived: false,
+      unitPrice: doc.unitPrice,
+      minQty: doc.minQty ?? 20,
+      qtyStep: doc.qtyStep ?? 10,
+      maxQty: doc.maxQty ?? 200,
+      lotSizes: (doc.lotSizes as number[] | null) ?? null,
+      volumeDiscounts:
+        (doc.volumeDiscounts as Array<{ fromQty: number; unitPrice: number }> | null) ?? null,
+      variants: [],
+      personalizationFields: [],
+    })
 
     produtos.push({
-      slug: produto.slug,
-      nome: produto.name,
-      config: toPricingConfig(produto.pricing),
-      aromas: produto.variants.map((variante) => ({
-        chave: variante.key,
-        rotulo: variante.label,
-      })),
-      faixas: produto.lotTable.map((linha) => ({
-        qty: linha.qty,
-        lotPrice: linha.lotPrice,
-        unitPrice: linha.unitPrice,
-      })),
-      camposDePersonalizacao: produto.personalizationFields.map((campo) => ({
+      slug: doc.slug,
+      nome: doc._status === 'published' ? doc.name : `${doc.name} (rascunho)`,
+      config,
+      aromas: (doc.variants ?? [])
+        .filter((variante) => variante.key && variante.active !== false)
+        .map((variante) => ({
+          chave: variante.key as string,
+          rotulo: variante.label ?? (variante.key as string),
+        })),
+      // A tabela é gravada como JSON pelo gancho do produto.
+      faixas: (Array.isArray(doc.lotTable) ? (doc.lotTable as LinhaDaTabela[]) : []).map(
+        (linha) => ({ qty: linha.qty, lotPrice: linha.lotPrice, unitPrice: linha.unitPrice }),
+      ),
+      camposDePersonalizacao: (doc.personalizationFields ?? []).map((campo) => ({
         rotulo: campo.label,
-        obrigatorio: campo.required,
-        limite: campo.maxChars,
+        obrigatorio: campo.required ?? false,
+        limite: campo.maxChars ?? null,
       })),
     })
   }
