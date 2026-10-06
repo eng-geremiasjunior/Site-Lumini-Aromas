@@ -30,3 +30,6 @@ npm-debug.log*
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Projeto separado, com node_modules próprio: não entra no repositório da loja.
+/video/
