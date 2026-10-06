@@ -33,3 +33,6 @@ next-env.d.ts
 
 # Projeto separado, com node_modules próprio: não entra no repositório da loja.
 /video/
+
+# Repositório antigo e vazio que ficou dentro da pasta. Não entra junto.
+/Site Lumini Aromas/
