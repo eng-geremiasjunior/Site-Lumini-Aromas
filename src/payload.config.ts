@@ -147,11 +147,14 @@ export default buildConfig({
      * esgotam o limite sozinhas — derrubando o painel e qualquer script
      * que precise do banco ao mesmo tempo.
      *
-     * Uma conexão por instância em produção, poucas em desenvolvimento.
+     * Mas UMA conexão por instância trava: o Payload dispara consultas em
+     * paralelo dentro da mesma requisição, a segunda espera a conexão que a
+     * primeira segura, e a função morre no limite de 5 minutos. Cinco é o
+     * meio-termo — não deadlocka e não esgota as 15 do pooler.
      */
     pool: {
       connectionString: process.env.DATABASE_URI ?? '',
-      max: process.env.VERCEL ? 1 : 4,
+      max: process.env.VERCEL ? 5 : 4,
       idleTimeoutMillis: 10_000,
     },
     /**
