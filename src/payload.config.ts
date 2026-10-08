@@ -72,6 +72,10 @@ export default buildConfig({
         dashboard: {
           Component: '@/admin/painel/Painel#Painel',
         },
+        clientes: {
+          Component: '@/admin/clientes/Clientes#Clientes',
+          path: '/clientes',
+        },
         novoPedido: {
           Component: '@/admin/NovoPedido#NovoPedido',
           path: '/novo-pedido',
