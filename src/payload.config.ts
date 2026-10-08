@@ -67,6 +67,11 @@ export default buildConfig({
         '@/admin/BotaoResultado#BotaoResultado',
       ],
       views: {
+        // A tela inicial do painel: o que precisa de ação e como o mês vai,
+        // no lugar do índice de coleções que o Payload mostra por padrão.
+        dashboard: {
+          Component: '@/admin/painel/Painel#Painel',
+        },
         novoPedido: {
           Component: '@/admin/NovoPedido#NovoPedido',
           path: '/novo-pedido',
@@ -132,7 +137,19 @@ export default buildConfig({
   editor: lexicalEditor(),
 
   db: postgresAdapter({
-    pool: { connectionString: process.env.DATABASE_URI ?? '' },
+    /**
+     * O pooler do Supabase no plano gratuito aceita 15 conexões no total.
+     * Cada função da Vercel abre o seu próprio punhado, e sem teto elas
+     * esgotam o limite sozinhas — derrubando o painel e qualquer script
+     * que precise do banco ao mesmo tempo.
+     *
+     * Uma conexão por instância em produção, poucas em desenvolvimento.
+     */
+    pool: {
+      connectionString: process.env.DATABASE_URI ?? '',
+      max: process.env.VERCEL ? 1 : 4,
+      idleTimeoutMillis: 10_000,
+    },
     /**
      * Sincronização automática desligada, inclusive em desenvolvimento.
      *

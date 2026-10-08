@@ -1,139 +1,147 @@
 /*
- * O painel com a cara da Lumini.
+ * O painel como ferramenta de trabalho.
  *
- * As cores, a tipografia e os cantos vêm do sistema de design que o dono
- * montou: oliva, kraft e um quase-preto quente, com títulos em serifada e
- * texto em Karla.
+ * A primeira versão vestiu o painel com a paleta da loja — creme, oliva,
+ * serifada. Ficou bonito e errado: o lugar onde se lança pedido às onze da
+ * noite e se fecha o mês precisa de densidade e contraste, não de
+ * atmosfera. Software de trabalho se parece com software de trabalho.
  *
- * A escolha aqui é **reescrever as variáveis do Payload**, não as telas.
- * O painel inteiro — listagens, formulários, botões, e também as telas
- * novas de resultado do mês e lista de materiais — passa a usar a paleta
- * nova sem que nada precise ser reconstruído. Fosse pelo outro caminho,
- * trocar a aparência significaria reescrever o CMS, e cada atualização do
- * Payload traria o conflito de volta.
+ * Então: cinza chumbo, tipografia de interface, linhas finas, tabelas
+ * compactas, e cor usada só onde ela significa alguma coisa — o verde do
+ * pago, o âmbar do que espera, o vermelho do que falhou.
  *
- * Carregado em `layout.tsx` depois do CSS do Payload, para vencer no empate.
+ * A aplicação é por variável do Payload, não por tela. Reescrever a escala
+ * repinta listagens, formulários e as telas próprias de uma vez; tela a
+ * tela, cada atualização do Payload traria o conflito de volta.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Karla:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root,
 [data-theme='light'] {
-  /* Fundo da página e dos campos: o creme do sistema, não o branco puro. */
-  --theme-bg: #f8f9f6;
+  --theme-bg: #f4f5f7;
   --theme-input-bg: #ffffff;
-  --theme-text: #37352f;
-  --color-text: #37352f;
-  --theme-border-color: #e2e5dd;
+  --theme-text: #16181d;
+  --color-text: #16181d;
+  --theme-border-color: #dfe2e7;
 
   /*
-   * A escala de elevação é a espinha dorsal do painel: bordas, textos
-   * secundários, fundos de cabeçalho e botões saem toda dela. Aqui ela
-   * deixa de ser cinza neutro e passa a ser um cinza esverdeado quente,
-   * que é o que dá o tom do sistema sem precisar pintar nada à mão.
+   * A escala de elevação é a espinha dorsal: bordas, textos secundários,
+   * cabeçalhos e botões saem toda dela. Um cinza levemente azulado, que
+   * cansa menos a vista do que o cinza puro em tela por horas.
    */
   --theme-elevation-0: #ffffff;
-  --theme-elevation-50: #f8f9f6;
-  --theme-elevation-100: #f1f3ee;
-  --theme-elevation-150: #e7eae2;
-  --theme-elevation-200: #dde1d7;
-  --theme-elevation-250: #d6dbd1;
-  --theme-elevation-300: #c4cbbd;
-  --theme-elevation-350: #b2bbaa;
-  --theme-elevation-400: #9ca693;
-  --theme-elevation-450: #8a9480;
-  --theme-elevation-500: #787774;
-  --theme-elevation-550: #6b7566;
-  --theme-elevation-600: #5e6859;
-  --theme-elevation-650: #55614e;
-  --theme-elevation-700: #4a5545;
-  --theme-elevation-750: #414b3e;
-  --theme-elevation-800: #3c4739;
-  --theme-elevation-850: #343d32;
-  --theme-elevation-900: #2e352e;
-  --theme-elevation-950: #262c26;
-  --theme-elevation-1000: #1d221d;
+  --theme-elevation-50: #f7f8fa;
+  --theme-elevation-100: #eef0f3;
+  --theme-elevation-150: #e4e7ec;
+  --theme-elevation-200: #d8dce2;
+  --theme-elevation-250: #c8cdd5;
+  --theme-elevation-300: #b4bac4;
+  --theme-elevation-350: #9ba2ae;
+  --theme-elevation-400: #848c99;
+  --theme-elevation-450: #6f7783;
+  --theme-elevation-500: #5c636e;
+  --theme-elevation-550: #4e545e;
+  --theme-elevation-600: #434951;
+  --theme-elevation-650: #3a3f47;
+  --theme-elevation-700: #32363d;
+  --theme-elevation-750: #2b2f35;
+  --theme-elevation-800: #24282d;
+  --theme-elevation-850: #1e2126;
+  --theme-elevation-900: #191c20;
+  --theme-elevation-950: #141619;
+  --theme-elevation-1000: #0f1113;
 
-  --color-base-1000: #37352f;
+  --color-base-1000: #16181d;
 
-  --font-body: 'Karla', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* A serifada dos títulos, usada nos cabeçalhos das telas próprias. */
-  --lumini-display: 'Times New Roman', Georgia, serif;
-
-  /* Kraft, do papel da tag. Entra nos destaques e nos avisos. */
-  --lumini-kraft: #8c6f55;
-  --lumini-kraft-claro: #b8a48e;
+  /* Significado, não decoração. */
+  --lumini-ok: #1f7a4d;
+  --lumini-espera: #9a6b00;
+  --lumini-erro: #b3261e;
+  --lumini-marca: #7a1f2b;
 }
 
-/*
- * No tema escuro, a mesma escala invertida. Sem isso, quem usa o painel
- * no escuro veria texto oliva sobre fundo oliva.
- */
 [data-theme='dark'] {
-  --theme-bg: #22251f;
-  --theme-input-bg: #2b2f29;
-  --theme-text: #eef0ea;
-  --color-text: #eef0ea;
-  --theme-border-color: #3a3f36;
+  --theme-bg: #121417;
+  --theme-input-bg: #1a1d21;
+  --theme-text: #e8eaed;
+  --color-text: #e8eaed;
+  --theme-border-color: #2b2f35;
 
-  --theme-elevation-0: #1b1e19;
-  --theme-elevation-50: #22251f;
-  --theme-elevation-100: #282c25;
-  --theme-elevation-150: #2f342c;
-  --theme-elevation-200: #373d33;
-  --theme-elevation-250: #40463b;
-  --theme-elevation-300: #4b5245;
-  --theme-elevation-350: #586050;
-  --theme-elevation-400: #667059;
-  --theme-elevation-450: #78836c;
-  --theme-elevation-500: #8a9480;
-  --theme-elevation-550: #9ca693;
-  --theme-elevation-600: #aeb7a5;
-  --theme-elevation-650: #bfc7b7;
-  --theme-elevation-700: #cfd5c8;
-  --theme-elevation-750: #dde1d7;
-  --theme-elevation-800: #e7eae2;
-  --theme-elevation-850: #eef0ea;
-  --theme-elevation-900: #f4f6f1;
-  --theme-elevation-950: #f8f9f6;
+  --theme-elevation-0: #0f1113;
+  --theme-elevation-50: #15181b;
+  --theme-elevation-100: #1a1d21;
+  --theme-elevation-150: #21252a;
+  --theme-elevation-200: #282d33;
+  --theme-elevation-250: #31363d;
+  --theme-elevation-300: #3b414a;
+  --theme-elevation-350: #474e58;
+  --theme-elevation-400: #555d68;
+  --theme-elevation-450: #656e7a;
+  --theme-elevation-500: #78818d;
+  --theme-elevation-550: #8c949f;
+  --theme-elevation-600: #9fa7b1;
+  --theme-elevation-650: #b1b8c1;
+  --theme-elevation-700: #c2c8cf;
+  --theme-elevation-750: #d2d7dc;
+  --theme-elevation-800: #e0e4e8;
+  --theme-elevation-850: #e8eaed;
+  --theme-elevation-900: #f0f2f4;
+  --theme-elevation-950: #f7f8f9;
   --theme-elevation-1000: #ffffff;
+
+  --lumini-ok: #4ade80;
+  --lumini-espera: #fbbf24;
+  --lumini-erro: #f87171;
 }
 
 /* ------------------------------------------------------------ tipografia */
 
 body,
 .payload-default-template,
-.nav {
+.nav,
+input,
+select,
+textarea,
+button {
   font-family: var(--font-body);
+  font-feature-settings: 'cv05', 'ss01';
+}
+
+body {
+  font-size: 13.5px;
+  letter-spacing: -0.006em;
 }
 
 h1,
-h2,
-h3,
 .doc-header__title,
 .collection-list__header h1,
-.dashboard__label {
-  font-family: var(--lumini-display);
-  font-weight: 400;
-  letter-spacing: 0.005em;
+.view-description {
+  letter-spacing: -0.02em;
+}
+
+h1,
+.doc-header__title {
+  font-size: 1.55rem;
+  font-weight: 600;
 }
 
 /* --------------------------------------------------------------- formas */
 
-/*
- * Cantos arredondados e traço fino em vez do quadrado duro do padrão.
- * É a diferença entre "ferramenta" e "lugar onde se trabalha todo dia".
- */
 .btn,
 .field-type input,
 .field-type textarea,
 .field-type .rs__control,
-.card,
-.table,
 .popup__content,
-.collection-list__wrap .table {
-  border-radius: 8px;
+.card {
+  border-radius: 6px;
+}
+
+.btn {
+  font-weight: 500;
+  letter-spacing: 0;
 }
 
 .btn--style-primary {
@@ -146,12 +154,11 @@ h3,
   border-color: var(--theme-elevation-900);
 }
 
-/* O campo em foco recebe o oliva, não o azul do padrão. */
 .field-type input:focus,
 .field-type textarea:focus,
 .field-type .rs__control--is-focused {
-  border-color: var(--theme-elevation-650);
-  box-shadow: 0 0 0 3px rgb(85 97 78 / 12%);
+  border-color: var(--theme-elevation-500);
+  box-shadow: 0 0 0 3px rgb(92 99 110 / 14%);
 }
 
 /* ------------------------------------------------------------ navegação */
@@ -161,29 +168,79 @@ h3,
   border-right: 1px solid var(--theme-border-color);
 }
 
+.nav__link {
+  border-radius: 5px;
+  font-size: 13px;
+}
+
 .nav__link:hover {
   background: var(--theme-elevation-100);
 }
 
 .nav-group__label {
-  font-family: var(--lumini-display);
-  font-size: 0.78rem;
-  letter-spacing: 0.1em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.09em;
   text-transform: uppercase;
-  color: var(--lumini-kraft);
+  color: var(--theme-elevation-450);
 }
 
-/* --------------------------------------------------------------- tabelas */
+/* ---------------------------------------------------------- listagens */
+
+/*
+ * Tabela compacta e cabeçalho fixo: numa lista de 200 pedidos, a diferença
+ * entre ver 12 linhas e ver 20 por tela é meia hora de rolagem por semana.
+ */
+.table {
+  font-size: 13px;
+}
 
 .table thead th {
-  font-family: var(--font-body);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--theme-elevation-50);
+  font-size: 0.7rem;
   font-weight: 600;
-  font-size: 0.8rem;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--theme-elevation-600);
+  color: var(--theme-elevation-500);
+  border-bottom: 1px solid var(--theme-border-color);
+}
+
+.table td,
+.table th {
+  padding-block: 9px;
 }
 
 .table tbody tr:hover {
   background: var(--theme-elevation-50);
+}
+
+/* Números alinhados pela vírgula, que é como se confere dinheiro. */
+.table td:has(.money),
+.cell-total,
+.cell-subtotal,
+.cell-unitPrice,
+.cell-valor {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+/* ------------------------------------------------------------ miniaturas */
+
+/*
+ * A biblioteca de mídia sem miniatura é uma lista de nomes de arquivo —
+ * inútil para escolher foto. O Payload mostra a imagem quando ela carrega;
+ * aqui só se garante o tamanho e o enquadramento.
+ */
+.thumbnail,
+.thumbnail img,
+.file-details__thumbnail,
+.upload__thumbnail img {
+  width: 44px;
+  height: 44px;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--theme-elevation-100);
 }
