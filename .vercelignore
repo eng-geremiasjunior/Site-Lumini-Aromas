@@ -1,0 +1,27 @@
+# O que NÃO sobe quando a publicação é feita pela linha de comando.
+#
+# Publicar pelo GitHub envia só o que está versionado. Publicar daqui
+# envia a pasta, então o que é segredo ou local precisa ser barrado de
+# propósito — a começar pelo .env, que tem a senha do banco.
+
+.env
+.env.local
+.env.*.local
+.env.backup-*
+
+# Build local e cache. A Vercel compila do zero lá.
+.next/
+out/
+node_modules/
+
+# Uploads de desenvolvimento. Em produção vão para o Cloudflare R2.
+media/
+public/media/
+
+# Projeto separado, com dependências próprias.
+video/
+
+# Exportações e arquivos de trabalho.
+*.csv
+*.log
+tsconfig.tsbuildinfo
