@@ -1,14 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["gru1"],
-  "crons": [
-    {
-      "path": "/tarefas/caixa-de-saida",
-      "schedule": "*/5 * * * *"
-    },
-    {
-      "path": "/tarefas/carrinhos-abandonados",
-      "schedule": "0 * * * *"
-    }
-  ]
+  "regions": ["gru1"]
 }
