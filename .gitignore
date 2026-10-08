@@ -36,3 +36,6 @@ next-env.d.ts
 
 # Repositório antigo e vazio que ficou dentro da pasta. Não entra junto.
 /Site Lumini Aromas/
+
+# Cópia do .env feita antes de escapar a senha. Nunca versionar.
+.env.backup-*

@@ -7,6 +7,8 @@ import { handleServerFunctions, RootLayout } from '@payloadcms/next/layouts'
 import { importMap } from './admin/importMap.js'
 
 import '@payloadcms/next/css'
+// Depois do CSS do Payload, para as cores da Lumini vencerem no empate.
+import '../../styles/painel.css'
 
 type Args = { children: React.ReactNode }
 
