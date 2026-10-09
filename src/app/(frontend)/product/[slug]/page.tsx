@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import { notFound } from 'next/navigation'
+import { notFound, permanentRedirect } from 'next/navigation'
 
-import { getProductBySlug } from '../../../../commerce/catalog/get-product.ts'
+import { getProductBySlug, slugDoProdutoAntigo } from '../../../../commerce/catalog/get-product.ts'
 import { provaSocialDoProduto } from '../../../../commerce/catalog/get-prova-social.ts'
 import { SeletorDeCompra } from './SeletorDeCompra.tsx'
 import { SecoesDaPagina } from './SecoesDaPagina.tsx'
@@ -38,7 +38,19 @@ export default async function ProductPage({ params, searchParams }: Props) {
   const busca = await searchParams
 
   const produto = await getProductBySlug(slug)
-  if (!produto) notFound()
+
+  if (!produto) {
+    // `/product/40/` era um link válido no site antigo, quando o endereço
+    // ainda era o número do produto no WooCommerce. Esses links estão em
+    // conversas de WhatsApp e no índice do Google, então antes de dizer
+    // que a página não existe vale perguntar ao banco.
+    if (/^\d+$/.test(slug)) {
+      const novo = await slugDoProdutoAntigo(Number(slug))
+      if (novo) permanentRedirect(`/product/${novo}/`)
+    }
+
+    notFound()
+  }
 
   const aroma = typeof busca.aroma === 'string' ? busca.aroma : null
   const quantidade = typeof busca.quantidade === 'string' ? Number(busca.quantidade) : null

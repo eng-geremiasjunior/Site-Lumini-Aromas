@@ -25,6 +25,7 @@ import { MoneyField as MoneyField_a7810204c508fa85c7adbac69bcf3ca5 } from '@/fie
 import { LotTableField as LotTableField_f0de0b1e3cc7af4c3cc24afe87c33b80 } from '@/fields/LotTableField'
 import { BotaoNovoPedido as BotaoNovoPedido_893d60d1934109ac45449482c127b685 } from '@/admin/BotaoNovoPedido'
 import { BotaoResultado as BotaoResultado_578b2a1aa03f41cebe75a00541f6f9eb } from '@/admin/BotaoResultado'
+import { BotaoClientes as BotaoClientes_f7e31e95e6ccb20497e78841258bc669 } from '@/admin/BotaoClientes'
 import { Painel as Painel_4fe3968ceec354c5c15b9237b6888fd1 } from '@/admin/painel/Painel'
 import { Clientes as Clientes_5d39c6747ec7ffb241d6202a9064c710 } from '@/admin/clientes/Clientes'
 import { NovoPedido as NovoPedido_fc640eee7d6f2ec2ea02ae4cc19ea0fd } from '@/admin/NovoPedido'
@@ -63,6 +64,7 @@ export const importMap = {
   "@/fields/LotTableField#LotTableField": LotTableField_f0de0b1e3cc7af4c3cc24afe87c33b80,
   "@/admin/BotaoNovoPedido#BotaoNovoPedido": BotaoNovoPedido_893d60d1934109ac45449482c127b685,
   "@/admin/BotaoResultado#BotaoResultado": BotaoResultado_578b2a1aa03f41cebe75a00541f6f9eb,
+  "@/admin/BotaoClientes#BotaoClientes": BotaoClientes_f7e31e95e6ccb20497e78841258bc669,
   "@/admin/painel/Painel#Painel": Painel_4fe3968ceec354c5c15b9237b6888fd1,
   "@/admin/clientes/Clientes#Clientes": Clientes_5d39c6747ec7ffb241d6202a9064c710,
   "@/admin/NovoPedido#NovoPedido": NovoPedido_fc640eee7d6f2ec2ea02ae4cc19ea0fd,

@@ -5,6 +5,7 @@ import {
   type DadosDoEvento,
   type EventoDaLoja,
 } from '../../../commerce/marketing/google-tag.ts'
+import { dispararNaMeta } from './pixel.ts'
 
 declare global {
   interface Window {
@@ -42,27 +43,34 @@ export function dispararEvento(
   comprador?: Record<string, unknown> | null,
 ): void {
   const gtag = typeof window === 'undefined' ? undefined : window.gtag
-  if (!gtag) return
 
-  if (comprador) gtag('set', 'user_data', comprador)
+  if (gtag) {
+    if (comprador) gtag('set', 'user_data', comprador)
 
-  if (DESTINOS.ga4) {
-    gtag('event', nome, { ...eventoParaGa4(nome, dados), send_to: DESTINOS.ga4 })
+    if (DESTINOS.ga4) {
+      gtag('event', nome, { ...eventoParaGa4(nome, dados), send_to: DESTINOS.ga4 })
+    }
+
+    // Na compra, o envio vai com o rótulo da conversão e leva o nome
+    // `conversion`, que é como o Google Ads registra a venda. Nos demais
+    // passos vai para a conta, alimentando os públicos de remarketing.
+    const destinoDoAds =
+      nome === 'purchase' ? (DESTINOS.conversaoDeCompra ?? DESTINOS.ads) : DESTINOS.ads
+
+    if (destinoDoAds) {
+      gtag(
+        'event',
+        nome === 'purchase' ? 'conversion' : nome,
+        eventoParaAds(nome, dados, destinoDoAds),
+      )
+    }
   }
 
-  // Na compra, o envio vai com o rótulo da conversão e leva o nome
-  // `conversion`, que é como o Google Ads registra a venda. Nos demais
-  // passos vai para a conta, alimentando os públicos de remarketing.
-  const destinoDoAds =
-    nome === 'purchase' ? (DESTINOS.conversaoDeCompra ?? DESTINOS.ads) : DESTINOS.ads
-
-  if (destinoDoAds) {
-    gtag(
-      'event',
-      nome === 'purchase' ? 'conversion' : nome,
-      eventoParaAds(nome, dados, destinoDoAds),
-    )
-  }
+  // A Meta vem no mesmo disparo, nunca em uma chamada separada espalhada
+  // pelas páginas. É o que garante que um passo novo do funil não seja
+  // medido só em uma das duas plataformas — e hoje o Instagram é de onde
+  // vem praticamente todo o tráfego pago da loja.
+  dispararNaMeta(nome, dados)
 }
 
 /**

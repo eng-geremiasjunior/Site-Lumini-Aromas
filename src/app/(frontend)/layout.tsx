@@ -4,6 +4,7 @@ import type React from 'react'
 import './globals.css'
 import { AvisoDeCookies } from './rastreamento/AvisoDeCookies.tsx'
 import { GoogleTag } from './rastreamento/GoogleTag.tsx'
+import { MetaPixel } from './rastreamento/MetaPixel.tsx'
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SERVER_URL ?? 'https://luminiaromas.com.br'),
@@ -34,6 +35,7 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
       </head>
       <body>
         {children}
+        <MetaPixel />
         <AvisoDeCookies />
       </body>
     </html>

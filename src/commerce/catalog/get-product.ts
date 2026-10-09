@@ -244,6 +244,30 @@ export async function listPublishedProducts(limit = 100) {
   return resultado.docs
 }
 
+/**
+ * Acha o produto pelo número que ele tinha no WooCommerce.
+ *
+ * Os links antigos `luminiaromas.com.br/product/40/` ainda existem em
+ * conversas de WhatsApp e no índice do Google. O número do WooCommerce foi
+ * guardado na importação justamente para que esses links não morram: a
+ * página do produto consulta aqui e manda a pessoa para o endereço novo
+ * com um 301.
+ */
+export async function slugDoProdutoAntigo(legacyWooId: number): Promise<string | null> {
+  const payload = await getPayloadClient()
+
+  const { docs } = await payload.find({
+    collection: 'products',
+    where: { legacyWooId: { equals: legacyWooId } },
+    limit: 1,
+    depth: 0,
+    overrideAccess: true,
+    select: { slug: true },
+  })
+
+  return (docs[0]?.slug as string | undefined) ?? null
+}
+
 /** O relacionamento volta como id ou como documento, conforme a profundidade. */
 function idDoRelacionamento(valor: unknown): string | null {
   if (valor === null || valor === undefined) return null

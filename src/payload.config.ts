@@ -65,6 +65,7 @@ export default buildConfig({
       beforeNavLinks: [
         '@/admin/BotaoNovoPedido#BotaoNovoPedido',
         '@/admin/BotaoResultado#BotaoResultado',
+        '@/admin/BotaoClientes#BotaoClientes',
       ],
       views: {
         // A tela inicial do painel: o que precisa de ação e como o mês vai,

@@ -11,6 +11,7 @@ import {
   type Consentimento,
 } from '../../../commerce/marketing/google-tag.ts'
 import { DESTINOS } from './disparar.ts'
+import { PIXEL, carregarPixel, revogarPixel } from './pixel.ts'
 
 declare global {
   interface Window {
@@ -44,7 +45,7 @@ export function AvisoDeCookies() {
     // Sem nenhuma medição configurada, a loja não grava cookie de análise
     // nem de publicidade — e um aviso pedindo consentimento para nada é só
     // um obstáculo a mais na primeira visita.
-    if (!DESTINOS.ga4 && !DESTINOS.ads) return
+    if (!DESTINOS.ga4 && !DESTINOS.ads && !PIXEL) return
 
     const bruto = document.cookie.match(/(?:^|; )lumini_consentimento=([^;]*)/)
     const escolha = lerEscolha(bruto ? decodeURIComponent(bruto[1] as string) : null)
@@ -58,6 +59,14 @@ export function AvisoDeCookies() {
     document.cookie = `${COOKIE_DO_CONSENTIMENTO}=${encodeURIComponent(valor)}; path=/; max-age=${validade}; SameSite=Lax`
 
     window.gtag?.('consent', 'update', consentimentoAtualizado(consentimento))
+
+    // A Meta não tem Consent Mode: o Pixel só entra na página agora, se a
+    // pessoa disse sim. Carregar na hora do clique, e não no recarregar
+    // seguinte, é o que faz o `_fbp` existir a tempo de a visita ser
+    // atribuída ao anúncio que a trouxe.
+    if (consentimento.publicidade) carregarPixel()
+    else revogarPixel()
+
     setAberto(false)
   }
 
