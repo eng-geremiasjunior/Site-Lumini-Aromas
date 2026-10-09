@@ -1,5 +1,3 @@
-import type { AdminViewServerProps } from 'payload'
-import { DefaultTemplate } from '@payloadcms/next/templates'
 import { Gutter } from '@payloadcms/ui'
 
 import { dreDoMes, mesAtual, serieDeMeses } from '../../commerce/finance/coletar.ts'
@@ -25,7 +23,7 @@ import { Barras, Numero, Secao } from './pecas.tsx'
  * de agência: ele precisa ser lido em dez segundos, de pé, com o celular
  * na outra mão.
  */
-export async function Painel(props: AdminViewServerProps) {
+export async function Painel() {
   const mes = mesAtual()
   const [dados, serie, operacao] = await Promise.all([
     dreDoMes(mes),
@@ -38,17 +36,7 @@ export async function Painel(props: AdminViewServerProps) {
   const maiorReceita = Math.max(...serie.map((p) => p.resumo.receitaBruta), 1)
 
   return (
-    <DefaultTemplate
-      i18n={props.initPageResult.req.i18n}
-      locale={props.initPageResult.locale}
-      params={props.params}
-      payload={props.initPageResult.req.payload}
-      permissions={props.initPageResult.permissions}
-      searchParams={props.searchParams}
-      user={props.initPageResult.req.user ?? undefined}
-      visibleEntities={props.initPageResult.visibleEntities}
-    >
-      <Gutter>
+    <Gutter>
         <header style={{ marginBottom: '1.75rem' }}>
           <h1 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600, letterSpacing: '-0.02em' }}>
             {saudacao()}
@@ -199,8 +187,7 @@ export async function Painel(props: AdminViewServerProps) {
             ))}
           </div>
         </Secao>
-      </Gutter>
-    </DefaultTemplate>
+    </Gutter>
   )
 }
 
