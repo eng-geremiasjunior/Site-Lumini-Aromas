@@ -2,7 +2,12 @@ import { RichText } from '@payloadcms/richtext-lexical/react'
 import type React from 'react'
 
 import type { Bloco } from '../../../commerce/legal/textos-padrao.ts'
-import { getPayloadClient } from '../../../lib/payload.ts'
+import {
+  configuracoesDaLoja,
+  dadosDaEmpresa,
+  formatarWhatsapp,
+  type DadosDaEmpresa,
+} from '../../../commerce/store/configuracoes.ts'
 import type { StoreSetting } from '../../../payload-types.ts'
 
 /**
@@ -21,72 +26,21 @@ import type { StoreSetting } from '../../../payload-types.ts'
  * uma política em branco.
  */
 
-export type DadosDaEmpresa = {
-  razaoSocial: string | null
-  nomeFantasia: string | null
-  cnpj: string | null
-  inscricaoEstadual: string | null
-  email: string | null
-  whatsapp: string | null
-  horario: string | null
-  endereco: string | null
-  versao: string | null
-}
-
 type CampoLegal = 'returnPolicy' | 'termsOfUse' | 'privacyPolicy'
 type ConteudoLegal = NonNullable<StoreSetting['returnPolicy']>
 
-async function configuracoes(): Promise<StoreSetting | null> {
-  const payload = await getPayloadClient()
-
-  // Loja no ar com banco fora do ar continua tendo de mostrar a política.
-  // Sem o catch, uma falha de conexão derrubaria a página inteira.
-  return (await payload
-    .findGlobal({ slug: 'store-settings', depth: 0, overrideAccess: true })
-    .catch(() => null)) as StoreSetting | null
-}
-
-function mapear(config: StoreSetting | null): DadosDaEmpresa {
-  const endereco = config?.address ?? null
-
-  const linha = endereco
-    ? [
-        [endereco.street, endereco.number].filter(Boolean).join(', '),
-        endereco.complement,
-        endereco.district,
-        [endereco.city, endereco.state].filter(Boolean).join('/'),
-        endereco.postalCode ? `CEP ${endereco.postalCode}` : null,
-      ]
-        .filter((parte) => parte && parte.length > 0)
-        .join(' · ')
-    : null
-
-  return {
-    razaoSocial: config?.legalName ?? null,
-    nomeFantasia: config?.tradeName ?? null,
-    cnpj: config?.cnpj ?? null,
-    inscricaoEstadual: config?.stateRegistration ?? null,
-    email: config?.email ?? null,
-    whatsapp: config?.whatsapp ?? null,
-    horario: config?.businessHours ?? null,
-    endereco: linha && linha.length > 0 ? linha : null,
-    versao: config?.legalVersion ?? null,
-  }
-}
-
-export async function dadosDaEmpresa(): Promise<DadosDaEmpresa> {
-  return mapear(await configuracoes())
-}
+export { dadosDaEmpresa, formatarWhatsapp }
+export type { DadosDaEmpresa }
 
 /** Os dados da empresa e o texto da política em uma única ida ao banco. */
 export async function paginaDoPainel(campo: CampoLegal): Promise<{
   empresa: DadosDaEmpresa
   conteudo: ConteudoLegal | null
 }> {
-  const config = await configuracoes()
+  const [config, empresa] = await Promise.all([configuracoesDaLoja(), dadosDaEmpresa()])
 
   return {
-    empresa: mapear(config),
+    empresa,
     conteudo: (config?.[campo] as ConteudoLegal | null | undefined) ?? null,
   }
 }
@@ -263,16 +217,4 @@ function OutrasPaginas({ atual }: { atual: string }) {
       ))}
     </nav>
   )
-}
-
-/** `5533999478774` vira `(33) 99947-8774`, que é como se lê um telefone. */
-export function formatarWhatsapp(numero: string): string {
-  const digitos = numero.replace(/\D/g, '').replace(/^55/, '')
-  if (digitos.length === 11) {
-    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 7)}-${digitos.slice(7)}`
-  }
-  if (digitos.length === 10) {
-    return `(${digitos.slice(0, 2)}) ${digitos.slice(2, 6)}-${digitos.slice(6)}`
-  }
-  return numero
 }

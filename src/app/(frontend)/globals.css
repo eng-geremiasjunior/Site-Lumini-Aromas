@@ -1,21 +1,126 @@
 /*
- * Base mínima da vitrine.
- * O design de luxo virá do Claude Design; aqui ficam apenas as variáveis
- * e o reset, para a página nascer legível e não herdar estilo do painel.
+ * Paleta Herbário — tokens oficiais da marca.
+ *
+ * Os valores vêm do design system entregue pelo Claude Design
+ * (`_ds/.../tokens/*.css`) e são copiados literalmente, como o handoff
+ * manda. Nada aqui é escolha de implementação: se um tom precisar mudar,
+ * muda no design, não no código.
+ *
+ * A regra que governa a paleta: nenhuma cor de interface é mais saturada
+ * do que o produto. Madeira, cera marfim e rosa envelhecido são os únicos
+ * pontos de cor na tela — eles vêm das fotos.
  */
+
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=Karla:wght@300;400;500&display=swap');
 
 :root {
   color-scheme: light;
 
-  --lumini-ink: #2b2622;
-  --lumini-ink-soft: #6b6259;
-  --lumini-cream: #faf7f2;
-  --lumini-gold: #b08d57;
-  --lumini-line: #e6ded2;
+  /* --- base: Herbário, aprovada em agosto de 2026 ------------------- */
+  --sage-50: #f8f9f6;
+  --sage-100: #edefea;
+  --sage-200: #d6dbd1;
+  --olive-400: #5e6859;
+  --olive-600: #55614e;
+  --olive-700: #3c4739;
+  --olive-900: #2e352e;
+  --wood-600: #6f5540;
+  --wood-400: #8c6f55;
+  --kraft-300: #b8a48e;
 
-  --lumini-font-body:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --lumini-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  /* --- superfícies -------------------------------------------------- */
+  --surface-page: var(--sage-100);
+  --surface-card: var(--sage-50);
+  --surface-inset: var(--sage-100);
+  --surface-dark: var(--olive-700);
+  --surface-photo: var(--sage-200);
+
+  /* --- texto -------------------------------------------------------- */
+  --text-body: var(--olive-900);
+  --text-muted: var(--olive-400);
+  --text-brand: var(--olive-600);
+  --text-wood: var(--wood-600);
+  --text-on-dark: var(--sage-50);
+
+  /* --- linhas ------------------------------------------------------- */
+  --border-hairline: var(--sage-200);
+  --border-strong: var(--olive-400);
+  --rule-kraft: var(--kraft-300);
+
+  /* --- ação --------------------------------------------------------- */
+  --action-bg: var(--olive-700);
+  --action-bg-hover: var(--olive-900);
+  --action-fg: var(--sage-50);
+
+  /* Só gráfico: falha o contraste em texto pequeno (4,01:1). */
+  --graphic-wood: var(--wood-400);
+
+  /* --- fundo das faixas imersivas ----------------------------------- */
+  /*
+   * Mais escuro que o rodapé de propósito: é a única superfície da loja
+   * em que a foto passa por baixo do texto, e o `--olive-700` não dá
+   * contraste suficiente para o parágrafo ficar legível sobre a foto.
+   */
+  --banda-fundo: #1e2922;
+  --banda-acento: #efc2a6;
+  --banda-linha: rgba(248, 249, 246, 0.18);
+  --banda-sublinhado: rgba(248, 249, 246, 0.4);
+
+  /* --- tipografia --------------------------------------------------- */
+  --font-display: 'EB Garamond', Georgia, 'Times New Roman', serif;
+  --font-text: 'Karla', 'Helvetica Neue', Arial, sans-serif;
+
+  --lh-display: 1.12;
+  --ls-display: -0.01em;
+  --lh-body: 1.65;
+  --size-eyebrow: 0.6875rem;
+  --ls-eyebrow: 0.22em;
+
+  --weight-light: 300;
+  --weight-regular: 400;
+  --weight-medium: 500;
+
+  --measure-prose: 34em;
+
+  /* --- espaçamento -------------------------------------------------- */
+  --container: 1160px;
+  --container-narrow: 720px;
+  --gutter: 24px;
+  --section-y: clamp(80px, 12vw, 144px);
+
+  /* --- forma -------------------------------------------------------- */
+  /* Papel, não interface de produto: cantos quase retos. */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-pill: 999px;
+
+  --shadow-lifted: 0 12px 32px -18px rgba(46, 53, 46, 0.22);
+  --shadow-overlay: 0 24px 64px -24px rgba(46, 53, 46, 0.32);
+  --shadow-sobre-escuro: 0 48px 90px -40px rgba(10, 16, 12, 0.78),
+    0 0 0 1px rgba(248, 249, 246, 0.08);
+
+  /* --- movimento ---------------------------------------------------- */
+  --dur-fast: 140ms;
+  --dur-base: 260ms;
+  --dur-slow: 520ms;
+  --ease-standard: cubic-bezier(0.32, 0.72, 0.24, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /*
+   * Compatibilidade com as telas construídas antes do design.
+   *
+   * Produto, carrinho, checkout e páginas legais usam estes nomes. Em vez
+   * de duas paletas disputando a mesma loja, os nomes antigos passam a
+   * apontar para os tons novos. O dourado sai: o design system proíbe
+   * ouro explicitamente, e o acento equivalente é a madeira.
+   */
+  --lumini-ink: var(--text-body);
+  --lumini-ink-soft: var(--text-muted);
+  --lumini-cream: var(--surface-card);
+  --lumini-gold: var(--text-wood);
+  --lumini-line: var(--border-hairline);
+  --lumini-font-body: var(--font-text);
+  --lumini-font-display: var(--font-display);
 }
 
 *,
@@ -31,30 +136,475 @@ body {
 }
 
 body {
-  background: var(--lumini-cream);
-  color: var(--lumini-ink);
-  font-family: var(--lumini-font-body);
-  font-size: 16px;
-  line-height: 1.6;
+  background: var(--surface-page);
+  color: var(--text-body);
+  font-family: var(--font-text);
+  font-weight: var(--weight-light);
+  font-size: 1rem;
+  line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
+  text-wrap: pretty;
 }
 
 h1,
 h2,
-h3 {
-  font-family: var(--lumini-font-display);
-  font-weight: 400;
-  letter-spacing: 0.01em;
-  line-height: 1.2;
-  margin: 0 0 0.5em;
+h3,
+h4 {
+  font-family: var(--font-display);
+  font-weight: var(--weight-regular);
+  line-height: var(--lh-display);
+  letter-spacing: var(--ls-display);
+  margin: 0;
 }
 
 a {
   color: inherit;
 }
 
-img {
+img,
+video {
   max-width: 100%;
-  height: auto;
   display: block;
+}
+
+img {
+  height: auto;
+}
+
+/* O foco é visível e nunca é um brilho colorido. */
+:focus-visible {
+  outline: 1px solid var(--olive-600);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--sage-200);
+  color: var(--olive-900);
+}
+
+/*
+ * A única entrada do sistema: aparecer subindo 14px.
+ *
+ * Os blocos começam invisíveis e o observador de rolagem acrescenta
+ * `data-visivel`. Quem tem JavaScript desligado não fica com a página em
+ * branco: a regra `no-js` devolve tudo visível.
+ */
+@keyframes lumini-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+[data-entrada] {
+  opacity: 0;
+}
+
+[data-entrada][data-visivel] {
+  animation: lumini-sobe var(--dur-slow) var(--ease-out) both;
+  animation-delay: var(--atraso, 0ms);
+}
+
+/* A gota do indicador "Rolar" da abertura. */
+@keyframes lumini-gota {
+  0% {
+    transform: translateY(-18px);
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  55%,
+  100% {
+    transform: translateY(48px);
+    opacity: 0;
+  }
+}
+
+/*
+ * Estados das peças.
+ *
+ * Vivem em CSS, e não em estado de React, porque hover não é dado: é
+ * apresentação. O protótipo do handoff usava `useState` para cada hover
+ * porque precisava rodar sem folha de estilo — aqui não precisa, e cada
+ * `useState` desses tornaria cliente um componente que pode ser servidor.
+ */
+.lumini-botao-solid:hover {
+  background: var(--action-bg-hover);
+}
+
+.lumini-botao-light:hover {
+  background: var(--sage-200);
+}
+
+.lumini-botao-quiet:hover {
+  color: var(--olive-900);
+  border-color: var(--border-strong);
+}
+
+/* O press aprofunda a cor e baixa a opacidade. Nunca encolhe nem desloca. */
+.lumini-botao:active {
+  opacity: 0.9;
+}
+
+.lumini-link:hover {
+  border-bottom-color: var(--text-body);
+}
+
+.lumini-link-escuro:hover {
+  border-bottom-color: var(--text-on-dark);
+}
+
+/* Links de navegação: o sublinhado nasce no hover, a cor escurece. */
+.lumini-nav-link {
+  border-bottom: 1px solid transparent;
+  transition:
+    color var(--dur-fast) var(--ease-standard),
+    border-color var(--dur-fast) var(--ease-standard);
+}
+
+.lumini-nav-link:hover {
+  color: var(--text-body);
+  border-bottom-color: var(--text-body);
+}
+
+.lumini-nav-link[data-ativo] {
+  color: var(--text-body);
+  border-bottom-color: var(--text-body);
+}
+
+/* Cartão de peça: a foto aproxima e a cápsula "Ver peça" sobe. */
+.lumini-cartao .lumini-cartao-foto {
+  transition:
+    opacity var(--dur-base) var(--ease-standard),
+    transform 1100ms var(--ease-out);
+}
+
+.lumini-cartao:hover .lumini-cartao-foto {
+  opacity: 0.92;
+  transform: scale(1.03);
+}
+
+.lumini-capsula {
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity var(--dur-base) var(--ease-standard),
+    transform var(--dur-base) var(--ease-standard);
+}
+
+.lumini-cartao:hover .lumini-capsula,
+.lumini-cartao:focus-visible .lumini-capsula {
+  opacity: 1;
+  transform: none;
+}
+
+/* Linhas do menu suspenso de Peças. */
+.lumini-item-do-menu:hover {
+  background: var(--surface-page);
+}
+
+/* ------------------------------------------------------------------ *
+ * Cabeçalho
+ *
+ * O único elemento fixo da loja e o único translúcido. Nada mais se
+ * prende à tela: sem barra de ação flutuante, sem bolha de WhatsApp — o
+ * convite para conversar se repete no texto.
+ * ------------------------------------------------------------------ */
+.lumini-cabecalho {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: rgba(237, 239, 234, 0.96);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-base) var(--ease-standard);
+}
+
+.lumini-cabecalho[data-rolou] {
+  border-bottom-color: var(--border-hairline);
+}
+
+.lumini-cabecalho-barra {
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 16px var(--gutter);
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  transition: padding 320ms var(--ease-standard);
+}
+
+.lumini-cabecalho[data-rolou] .lumini-cabecalho-barra {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* O selo é sempre um círculo: o arquivo é um JPEG em quadrado branco. */
+.lumini-selo {
+  width: var(--selo, 40px);
+  height: var(--selo, 40px);
+  flex: 0 0 var(--selo, 40px);
+  border-radius: 50%;
+  object-fit: cover;
+  transition:
+    width var(--dur-base) var(--ease-standard),
+    height var(--dur-base) var(--ease-standard),
+    flex-basis var(--dur-base) var(--ease-standard);
+}
+
+.lumini-marca {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  flex: 0 0 auto;
+}
+
+/* Encolhe junto com a barra, sem passar por estado de React. */
+.lumini-cabecalho[data-rolou] .lumini-marca .lumini-selo {
+  --selo: 32px;
+}
+
+.lumini-nav-desktop {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.lumini-acoes {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-left: auto;
+}
+
+.lumini-nav-link,
+.lumini-nav-botao {
+  font-family: var(--font-text);
+  font-weight: 400;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  text-decoration: none;
+  background: none;
+  padding: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.lumini-nav-botao {
+  border: 0;
+  border-bottom: 1px solid transparent;
+}
+
+.lumini-pecas {
+  position: relative;
+}
+
+.lumini-menu-pecas {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: -16px;
+  width: 280px;
+  background: var(--surface-card);
+  border: 1px solid var(--border-hairline);
+  border-radius: var(--radius-sm);
+  padding: 12px 0;
+  box-shadow: var(--shadow-lifted);
+  animation: lumini-sobe var(--dur-base) var(--ease-out) both;
+}
+
+.lumini-item-do-menu {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 20px;
+  text-decoration: none;
+  color: var(--text-body);
+  font-size: 14px;
+  font-weight: 300;
+  transition: background-color var(--dur-fast) var(--ease-standard);
+}
+
+.lumini-item-contagem {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.lumini-menu-divisor {
+  height: 1px;
+  background: var(--border-hairline);
+  margin: 8px 20px;
+}
+
+.lumini-sacola {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.lumini-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: var(--radius-pill);
+  background: var(--action-bg);
+  color: var(--action-fg);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+/*
+ * O hambúrguer são três linhas de 1px, não um ícone.
+ * O design system não tem arquivo de ícone de propósito.
+ */
+.lumini-hamburguer {
+  width: 28px;
+  height: 44px;
+  background: none;
+  border: 0;
+  padding: 0;
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.lumini-hamburguer span {
+  display: block;
+  height: 1px;
+  width: 28px;
+  background: var(--text-body);
+  transition: transform var(--dur-base) var(--ease-standard), opacity var(--dur-base)
+    var(--ease-standard);
+}
+
+.lumini-hamburguer span:nth-child(1)[data-aberto] {
+  transform: translateY(6px) rotate(45deg);
+}
+
+.lumini-hamburguer span:nth-child(2)[data-aberto] {
+  opacity: 0;
+}
+
+.lumini-hamburguer span:nth-child(3)[data-aberto] {
+  transform: translateY(-6px) rotate(-45deg);
+}
+
+.lumini-menu-mobile {
+  border-top: 1px solid var(--border-hairline);
+  padding: 8px var(--gutter) 24px;
+  animation: lumini-sobe 360ms var(--ease-out) both;
+}
+
+.lumini-menu-mobile a {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 26px;
+  line-height: 1.3;
+  color: var(--text-body);
+  text-decoration: none;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border-hairline);
+}
+
+.lumini-menu-mobile a.lumini-menu-whatsapp {
+  border-bottom: 0;
+  font-family: var(--font-text);
+  font-size: 15px;
+  color: var(--text-wood);
+  padding-top: 20px;
+}
+
+.lumini-so-mobile {
+  display: none;
+}
+
+.lumini-link-rodape:hover {
+  color: var(--text-on-dark);
+}
+
+@media (max-width: 759px) {
+  .lumini-nav-desktop,
+  .lumini-so-desktop {
+    display: none;
+  }
+
+  .lumini-hamburguer,
+  .lumini-so-mobile {
+    display: flex;
+  }
+
+  .lumini-cabecalho-barra {
+    gap: 16px;
+  }
+
+  .lumini-acoes {
+    gap: 14px;
+  }
+
+  /* No celular o selo é um pouco menor: a palavra da marca precisa caber. */
+  .lumini-marca .lumini-selo {
+    --selo: 36px;
+  }
+
+  /*
+   * No celular a sacola é só o número — a palavra não cabe ao lado da
+   * marca. O texto continua no HTML para o leitor de tela ter o que
+   * anunciar, e o link some de vez quando não há nada dentro: um alvo
+   * invisível no topo da tela é pior do que um link a menos.
+   */
+  .lumini-sacola .lumini-so-mobile {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .lumini-sacola:not(:has(.lumini-badge)) {
+    display: none;
+  }
+}
+
+/* Abas e filtros roláveis no celular, sem barra de rolagem à vista. */
+.lumini-rolagem-oculta {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.lumini-rolagem-oculta::-webkit-scrollbar {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Sem movimento, mas o conteúdo continua aparecendo. */
+  [data-entrada] {
+    opacity: 1;
+  }
 }

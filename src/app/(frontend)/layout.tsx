@@ -2,6 +2,10 @@ import type { Metadata } from 'next'
 import type React from 'react'
 
 import './globals.css'
+import { Cabecalho } from './comum/Cabecalho.tsx'
+import { Entradas } from './comum/Entradas.tsx'
+import { ProvedorDeFiltro } from './comum/filtro.tsx'
+import { Rodape } from './comum/Rodape.tsx'
 import { AvisoDeCookies } from './rastreamento/AvisoDeCookies.tsx'
 import { GoogleTag } from './rastreamento/GoogleTag.tsx'
 import { MetaPixel } from './rastreamento/MetaPixel.tsx'
@@ -34,7 +38,17 @@ export default function FrontendLayout({ children }: { children: React.ReactNode
         <GoogleTag />
       </head>
       <body>
-        {children}
+        {/*
+         * O filtro da vitrine envolve cabeçalho e página porque os dois
+         * mexem nele: o menu "Peças" escolhe a ocasião e a vitrine
+         * desenha o resultado.
+         */}
+        <ProvedorDeFiltro>
+          <Cabecalho />
+          {children}
+          <Rodape />
+        </ProvedorDeFiltro>
+        <Entradas />
         <MetaPixel />
         <AvisoDeCookies />
       </body>

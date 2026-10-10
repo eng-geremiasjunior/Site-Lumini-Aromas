@@ -1,55 +1,56 @@
+import type { Metadata } from 'next'
+
+import { listarOcasioes, listarPecasDaVitrine } from '../../commerce/catalog/get-vitrine.ts'
+import { dadosDaEmpresa } from '../../commerce/store/configuracoes.ts'
+import './inicio/inicio.css'
+import { Abertura } from './inicio/Abertura.tsx'
+import { Agenda } from './inicio/Agenda.tsx'
+import { Condicoes } from './inicio/Condicoes.tsx'
+import { FaixaImersiva } from './inicio/FaixaImersiva.tsx'
+import { Ocasioes } from './inicio/Ocasioes.tsx'
+import { Portal } from './inicio/Portal.tsx'
+import { Vitrine } from './inicio/Vitrine.tsx'
+
 /**
- * Página inicial provisória.
+ * A página inicial.
  *
- * O design de luxo será feito no Claude Design e aplicado aqui.
- * Por enquanto ela serve para confirmar que a vitrine e o painel
- * sobem no mesmo aplicativo.
+ * A ordem das seções é a da conversa que acontece no WhatsApp, na mesma
+ * sequência: o que é isso (abertura), como funciona (condições), o que
+ * tem (vitrine), como é feito (faixa), serve para o meu evento?
+ * (ocasiões), cabe na minha data? (agenda), e o parceiro no fim.
+ *
+ * A vitrine e as ocasiões vêm do banco. O resto é conteúdo do design, com
+ * os dados da empresa — WhatsApp, pedido mínimo — vindos do painel, para
+ * não existir número de telefone escrito em código.
  */
-export default function HomePage() {
+
+export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Lumini Aromas — Lembrancinhas montadas à mão para casamentos e eventos',
+  description:
+    'Velas aromáticas sobre tronco, em vidro e em cerâmica, com os nomes e a data do seu evento na tag. Lotes fechados a partir de 20 peças, produzidos do zero para uma data.',
+  alternates: { canonical: '/' },
+}
+
+export default async function HomePage() {
+  const [pecas, empresa] = await Promise.all([listarPecasDaVitrine(), dadosDaEmpresa()])
+  const ocasioes = await listarOcasioes(pecas)
+
   return (
-    <main
-      style={{
-        maxWidth: '46rem',
-        margin: '0 auto',
-        padding: '6rem 1.5rem',
-      }}
-    >
-      <p
-        style={{
-          textTransform: 'uppercase',
-          letterSpacing: '0.24em',
-          fontSize: '0.75rem',
-          color: 'var(--lumini-gold)',
-          marginBottom: '1.5rem',
-        }}
-      >
-        Lumini Aromas
-      </p>
+    <>
+      <Abertura whatsapp={empresa.whatsapp} />
+      <Condicoes pedidoMinimo={empresa.pedidoMinimo} />
 
-      <h1 style={{ fontSize: 'clamp(2rem, 5vw, 3rem)' }}>
-        Lembrancinhas personalizadas de luxo
-      </h1>
+      {empresa.avisoDeProducao && (
+        <div className="lumini-aviso-de-prazo">{empresa.avisoDeProducao}</div>
+      )}
 
-      <p style={{ color: 'var(--lumini-ink-soft)', fontSize: '1.05rem' }}>
-        Velas aromáticas artesanais em vidro e madeira, feitas à mão e personalizadas para
-        casamentos, bodas, 15 anos, batizados e eventos corporativos.
-      </p>
-
-      <hr
-        style={{
-          border: 0,
-          borderTop: '1px solid var(--lumini-line)',
-          margin: '2.5rem 0',
-        }}
-      />
-
-      <p style={{ color: 'var(--lumini-ink-soft)', fontSize: '0.95rem' }}>
-        Nova plataforma em construção. O painel de administração está em{' '}
-        <a href="/admin" style={{ color: 'var(--lumini-gold)' }}>
-          /admin
-        </a>
-        .
-      </p>
-    </main>
+      <Vitrine pecas={pecas} ocasioes={ocasioes} />
+      <FaixaImersiva whatsapp={empresa.whatsapp} />
+      <Ocasioes ocasioes={ocasioes} />
+      <Agenda whatsapp={empresa.whatsapp} />
+      <Portal />
+    </>
   )
 }

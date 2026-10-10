@@ -15,11 +15,13 @@ out/
 node_modules/
 
 # Uploads de desenvolvimento. Em produção vão para o Cloudflare R2.
-media/
-public/media/
+/media/
+/public/media/
 
 # Projeto separado, com dependências próprias.
-video/
+# A barra na frente prende a regra à raiz: sem ela, `video/` casaria
+# também com `public/home/video/`, e a abertura da loja subiria sem vídeo.
+/video/
 
 # Exportações e arquivos de trabalho.
 *.csv
